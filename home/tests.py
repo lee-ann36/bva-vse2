@@ -1523,3 +1523,26 @@ class BeveiligingTests(StatsFilmEnHomepageTests):
         with override_settings(ACHTER_PROXY=True):
             self.assertEqual(client_ip(verzoek), '81.2.3.4')  # niet het vervalsbare eerste adres
             self.assertEqual(client_ip(rf.get('/', HTTP_CF_CONNECTING_IP='81.9.9.9', REMOTE_ADDR='10.0.0.1')), '81.9.9.9')
+
+
+class InloggenZonderHoofdletterTests(BeveiligingTests):
+    """Telefoons maken de eerste letter een hoofdletter: inloggen moet dan nog steeds lukken."""
+
+    def test_naam_met_hoofdletters_of_spaties(self):
+        for naam in ('zoe', 'Zoe', 'ZOE', ' Zoe '):
+            r = Client().post('/api/coach-inloggen/', json.dumps(
+                {'page_id': self.page.id, 'gebruikersnaam': naam, 'wachtwoord': 'geheim-123'}), content_type='application/json')
+            self.assertEqual(r.status_code, 200, naam)
+        self.assertEqual(Client().post('/admin/login/', {'username': 'Coachtest', 'password': 'coach-wachtwoord-1'}).status_code, 302)
+        # Het wachtwoord blijft hoofdlettergevoelig
+        r = Client().post('/api/coach-inloggen/', json.dumps(
+            {'page_id': self.page.id, 'gebruikersnaam': 'Zoe', 'wachtwoord': 'Geheim-123'}), content_type='application/json')
+        self.assertEqual(r.status_code, 401)
+
+    def test_blokkade_telt_ook_met_andere_hoofdletters(self):
+        for i, naam in enumerate(['zoe', 'Zoe', 'ZOE', 'zOe', 'ZoE'] * 2):
+            Client(REMOTE_ADDR=f'10.2.0.{i}').post('/admin/login/', {'username': naam, 'password': 'fout'})
+        self.assertEqual(Client(REMOTE_ADDR='10.2.9.9').post('/admin/login/', {'username': 'zoe', 'password': 'geheim-123'}).status_code, 429)
+
+    def test_inlogveld_zonder_automatische_hoofdletter(self):
+        self.assertContains(Client().get(self.page.url), 'autocapitalize="none"')
