@@ -52,6 +52,12 @@
         knop.disabled = true;
         try {
             await verstuur(form.dataset.endpoint, new FormData(form), true);
+            const pin = form.elements.pincode ? form.elements.pincode.value.trim() : '';
+            if (pin) {
+                // Laat de nieuwe pincode nog één keer zien, zodat de coach hem kan doorgeven
+                alert('Opgeslagen! De pincode van ' + form.elements.naam.value.trim() + ' is nu: ' + pin +
+                      '\n\nGeef deze door aan de speelster. Hij is hierna niet meer te zien.');
+            }
             window.location.reload();
         } catch (e) {
             fout(form, e.message);
@@ -87,7 +93,6 @@
         const getal = new Uint32Array(1);
         window.crypto.getRandomValues(getal);
         veld.value = String(getal[0] % 10000).padStart(4, '0');
-        veld.type = 'text';
     };
 
     // ---- Staf ----
