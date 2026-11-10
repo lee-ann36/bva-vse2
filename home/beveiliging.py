@@ -21,9 +21,14 @@ BLOKKEER_SECONDEN = 15 * 60    # ... binnen 15 minuten
 BLOKKADE_MELDING = 'Te veel foute pogingen. Probeer het over 15 minuten opnieuw.'
 
 
+def _zonder_accenten(tekst):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFKD', str(tekst)) if not unicodedata.combining(c)).casefold().strip()
+
+
 class NaamZonderHoofdletters(ModelBackend):
     """
-    Inloggen met je naam, of je nu 'anniko', 'Anniko' of ' ANNIKO ' typt.
+    Inloggen met je naam, of je nu 'anniko', 'Anniko' of ' ANNIKO ' typt, en 'Zoe' voor 'Zoë'.
     Telefoons maken de eerste letter vaak automatisch een hoofdletter; daardoor lukte inloggen niet.
     Het wachtwoord blijft wel hoofdlettergevoelig.
     """
@@ -36,6 +41,10 @@ class NaamZonderHoofdletters(ModelBackend):
             return None
         username = str(username).strip()
         kandidaten = list(User._default_manager.filter(**{f'{User.USERNAME_FIELD}__iexact': username})[:2])
+        if not kandidaten:
+            # Zonder accenten vergelijken ('Zoe' = 'Zoë'); het team heeft maar een handvol accounts
+            kort = _zonder_accenten(username)
+            kandidaten = [u for u in User._default_manager.all() if _zonder_accenten(u.get_username()) == kort][:2]
         if len(kandidaten) > 1:  # twee accounts die alleen in hoofdletters verschillen: dan precies
             kandidaten = [u for u in kandidaten if u.get_username() == username]
         if len(kandidaten) != 1:

@@ -1546,3 +1546,10 @@ class InloggenZonderHoofdletterTests(BeveiligingTests):
 
     def test_inlogveld_zonder_automatische_hoofdletter(self):
         self.assertContains(Client().get(self.page.url), 'autocapitalize="none"')
+
+    def test_naam_zonder_accenten(self):
+        get_user_model().objects.create_user('Anaïs', password='test-ww-4821')
+        from django.contrib.auth import authenticate
+        for naam in ('Anaïs', 'anaïs', 'ANAÏS', 'Anais', 'anais ', 'ANAIS'):
+            self.assertIsNotNone(authenticate(username=naam, password='test-ww-4821'), naam)
+        self.assertIsNone(authenticate(username='Anais', password='fout'))
