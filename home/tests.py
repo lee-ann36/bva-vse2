@@ -1396,3 +1396,47 @@ class StatsFilmEnHomepageTests(StatsOpzet):
         # Ook voor Zoë alleen de knop naar het overzicht (bijhouden doet ze op de statistiekenpagina)
         self.assertContains(r, 'Bekijk alle stats')
         self.assertNotContains(r, 'Nieuwe wedstrijd bijhouden')
+
+
+class DatabaseOpslagTests(TestCase):
+    """Foto's in de database (voor een server zonder blijvende schijf)."""
+
+    def test_foto_uploaden_rendition_en_tonen(self):
+        from django.core.files.images import ImageFile
+        from django.core.files.storage import storages
+        from django.test import RequestFactory, override_settings
+        from wagtail.images import get_image_model
+
+        from home.models import Bestand
+        from home.opslag import DatabaseOpslag, toon_bestand
+
+        from django.conf import settings
+        opslag = {**settings.STORAGES, 'default': {'BACKEND': 'home.opslag.DatabaseOpslag'}}
+        with override_settings(STORAGES=opslag):
+            storages._storages = {}
+            try:
+                self.assertIsInstance(storages['default'], DatabaseOpslag)
+                img = get_image_model().objects.create(title='Teamfoto', file=ImageFile(_test_foto('team.png').file, name='team.png'))
+                self.assertTrue(Bestand.objects.filter(naam=img.file.name).exists())
+                self.assertEqual((img.width, img.height), (40, 40))
+                r = img.get_rendition('fill-10x10')
+                self.assertTrue(Bestand.objects.filter(naam=r.file.name).exists())
+                self.assertTrue(r.url.startswith('/media/'))
+
+                resp = toon_bestand(RequestFactory().get(r.url), r.file.name)
+                self.assertEqual(resp.status_code, 200)
+                self.assertEqual(resp['Content-Type'], 'image/png')
+                self.assertTrue(resp.content.startswith(b'\x89PNG'))
+
+                with self.captureOnCommitCallbacks(execute=True):  # Wagtail wist bestanden pas na de commit
+                    img.delete()
+                self.assertFalse(Bestand.objects.filter(naam=img.file.name).exists())
+            finally:
+                storages._storages = {}
+
+    def test_onbekend_bestand_geeft_404(self):
+        from django.http import Http404
+        from django.test import RequestFactory
+        from home.opslag import toon_bestand
+        with self.assertRaises(Http404):
+            toon_bestand(RequestFactory().get('/media/x.png'), 'x.png')

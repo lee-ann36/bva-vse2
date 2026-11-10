@@ -6,6 +6,8 @@ omgevingsvariabelen (in te stellen bij de hostingpartij):
     ALLOWED_HOSTS     domeinnaam/-namen, komma-gescheiden (bijv. bva-vse2.fly.dev);
                       op Render hoeft dit niet: het Render-adres wordt automatisch toegevoegd
     DATA_DIR          map op een blijvende schijf voor database + uploads (standaard /data)
+    DATABASE_URL      optioneel: online PostgreSQL-database (bijv. Neon). Dan staan alle gegevens
+                      én geüploade foto's in die database en is geen blijvende schijf nodig.
 """
 import os
 from pathlib import Path
@@ -27,6 +29,15 @@ if ALLOWED_HOSTS:
 DATA_DIR = Path(os.environ.get('DATA_DIR', '/data'))
 DATABASES['default']['NAME'] = DATA_DIR / 'db.sqlite3'  # noqa: F405
 MEDIA_ROOT = DATA_DIR / 'media'
+
+if os.environ.get('DATABASE_URL'):
+    import dj_database_url
+    DATABASES['default'] = dj_database_url.parse(  # noqa: F405
+        os.environ['DATABASE_URL'], conn_max_age=60, conn_health_checks=True, ssl_require=True,
+    )
+    INSTALLED_APPS.append('django.contrib.postgres')  # noqa: F405  (nodig voor de zoekfunctie van Wagtail)
+    # Foto's en documenten ook in de database, want de schijf van een gratis server wordt gewist
+    STORAGES['default'] = {'BACKEND': 'home.opslag.DatabaseOpslag'}  # noqa: F405
 
 # CSS/JS serveren via WhiteNoise (gzip + lange cache)
 MIDDLEWARE.insert(MIDDLEWARE.index('django.middleware.security.SecurityMiddleware') + 1,  # noqa: F405

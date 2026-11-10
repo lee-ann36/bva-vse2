@@ -7,6 +7,7 @@ from wagtail import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
 
 from home import pwa
+from home.opslag import toon_bestand
 
 # Importeer je API views voor de reacties
 from home.views import (
@@ -79,8 +80,10 @@ urlpatterns = [
     # Health check voor de hostingpartij
     path('up/', lambda request: HttpResponse('ok', content_type='text/plain'), name='up'),
 
-    # Geüploade foto's (klein team, dus Django mag ze zelf serveren)
-    re_path(r'^media/(?P<path>.*)$', serve_media, {'document_root': settings.MEDIA_ROOT}),
+    # Geüploade foto's (klein team, dus Django mag ze zelf serveren; uit de database als ze daar staan)
+    re_path(r'^media/(?P<path>.*)$', toon_bestand)
+    if settings.STORAGES['default']['BACKEND'] == 'home.opslag.DatabaseOpslag'
+    else re_path(r'^media/(?P<path>.*)$', serve_media, {'document_root': settings.MEDIA_ROOT}),
 
     # 3. Wagtail pagina's (deze moet onderaan staan)
     path('', include(wagtail_urls)),

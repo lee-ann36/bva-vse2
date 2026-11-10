@@ -1069,3 +1069,18 @@ class StatsPage(Page):
         context = super().get_context(request)
         context.update(stats_context(self, request))
         return context
+
+
+class Bestand(models.Model):
+    """Een geüpload bestand (foto, document), opgeslagen in de database. Zie home/opslag.py."""
+    naam = models.CharField(max_length=255, unique=True)
+    inhoud = models.BinaryField()
+    grootte = models.PositiveIntegerField(default=0)
+    gewijzigd = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'bestand'
+        verbose_name_plural = 'bestanden'
+
+    def __str__(self):
+        return self.naam
