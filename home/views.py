@@ -82,6 +82,8 @@ def sla_reactie_op(request):
         return _fout(f'Naam (max {MAX_NAAM}) of reactie (max {MAX_TEKST} tekens) is te lang.')
     if rol not in ROLLEN:
         return _fout('Ongeldige rol.')
+    if rol == 'coach' and not is_moderator(request.user):
+        return _fout('Alleen ingelogde coaches en trainers kunnen als coach reageren.', status=403)
 
     try:
         page = Page.objects.live().get(id=int(data.get('page_id'))).specific
@@ -278,12 +280,7 @@ def film_verwijderen(request):
 from django.contrib.auth import authenticate, login, logout
 from django.core.cache import cache
 
-MAX_POGINGEN = 10          # foute pogingen per IP-adres ...
-BLOKKEER_SECONDEN = 15 * 60  # ... binnen 15 minuten
-
-
-def _client_ip(request):
-    return request.META.get('REMOTE_ADDR', 'onbekend')
+from .beveiliging import BLOKKADE_MELDING, client_ip as _client_ip, is_geblokkeerd
 
 
 def _mag_beheren_op(user, page):
@@ -304,10 +301,9 @@ def coach_inloggen(request):
     if data is None:
         return _fout('Ongeldige gegevens.')
 
-    sleutel = f'coach-login-pogingen:{_client_ip(request)}'
-    pogingen = cache.get(sleutel, 0)
-    if pogingen >= MAX_POGINGEN:
-        return _fout('Te veel foute pogingen. Probeer het over 15 minuten opnieuw.', status=429)
+    gebruikersnaam = str(data.get('gebruikersnaam') or '').strip()
+    if is_geblokkeerd(request, gebruikersnaam):
+        return _fout(BLOKKADE_MELDING, status=429)
 
     try:
         page = Page.objects.live().get(id=int(data.get('page_id'))).specific
@@ -316,18 +312,16 @@ def coach_inloggen(request):
 
     user = authenticate(
         request,
-        username=str(data.get('gebruikersnaam') or '').strip(),
+        username=gebruikersnaam,
         password=str(data.get('wachtwoord') or ''),
     )
-    if user is None:
-        cache.set(sleutel, pogingen + 1, BLOKKEER_SECONDEN)
+    if user is None:  # de foute poging wordt geteld in beveiliging.py
         return _fout('Onjuiste naam of wachtwoord.', status=401)
 
     if not _mag_beheren_op(user, page):
         return _fout('Dit account mag op deze pagina niets aanpassen.', status=403)
 
-    cache.delete(sleutel)
-    login(request, user)
+    login(request, user)  # wist ook de teller (beveiliging.py)
     return JsonResponse({'status': 'success', 'naam': user.get_full_name() or user.username})
 
 
@@ -344,7 +338,8 @@ from datetime import date as _date
 
 from .models import Afvinking, Opdracht, Speler, TrainingPage, week_start
 
-MAX_PIN_POGINGEN = 5             # foute pincodes per speelster (en per IP) ...
+MAX_PIN_POGINGEN = 5             # foute pincodes per speelster ...
+MAX_PIN_POGINGEN_PER_ADRES = 20  # ... en per IP-adres (hele team op dezelfde wifi) ...
 PIN_BLOKKEER_SECONDEN = 15 * 60  # ... binnen 15 minuten
 SPELER_SESSIE_DAGEN = 60
 
@@ -383,8 +378,11 @@ def speler_kiezen(request):
     except (Speler.DoesNotExist, TypeError, ValueError):
         return _fout('Kies je naam uit de lijst.')
 
-    sleutels = [f'pin-pogingen:speler:{speler.id}', f'pin-pogingen:ip:{_client_ip(request)}']
-    if any(cache.get(k, 0) >= MAX_PIN_POGINGEN for k in sleutels):
+    # Per speelster streng (tegen raden); per adres ruimer, want een team op één wifi deelt een adres
+    limieten = {f'pin-pogingen:speler:{speler.id}': MAX_PIN_POGINGEN,
+                f'pin-pogingen:ip:{_client_ip(request)}': MAX_PIN_POGINGEN_PER_ADRES}
+    sleutels = list(limieten)
+    if any(cache.get(k, 0) >= limiet for k, limiet in limieten.items()):
         return _fout('Te veel foute pincodes. Probeer het over 15 minuten opnieuw.', status=429)
 
     if not speler.heeft_pincode:

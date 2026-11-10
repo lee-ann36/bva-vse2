@@ -46,6 +46,8 @@ STORAGES['staticfiles']['BACKEND'] = 'whitenoise.storage.CompressedManifestStati
 
 # HTTPS achter de proxy van de hostingpartij
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Echte IP-adres van bezoekers uit de headers van de proxy halen (voor de inlogblokkade)
+ACHTER_PROXY = True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

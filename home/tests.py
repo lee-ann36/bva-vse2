@@ -1440,3 +1440,61 @@ class DatabaseOpslagTests(TestCase):
         from home.opslag import toon_bestand
         with self.assertRaises(Http404):
             toon_bestand(RequestFactory().get('/media/x.png'), 'x.png')
+
+
+class BeveiligingTests(StatsFilmEnHomepageTests):
+    """Alleen wie iets mag, kan het ook: reacties als coach en de inlogblokkade."""
+
+    def setUp(self):
+        super().setUp()
+        cache.clear()
+        from django.contrib.auth.models import Permission
+        self.coach = get_user_model().objects.create_user('coachtest', password='coach-wachtwoord-1')
+        self.coach.user_permissions.add(Permission.objects.get(codename='access_admin'))
+
+    def _reactie(self, client, rol):
+        return client.post('/api/sla-reactie/', json.dumps({
+            'page_id': self.archief.id, 'block_id': self.film_leiden, 'auteur': 'Anniko', 'rol': rol, 'tekst': 'Goed gespeeld',
+        }), content_type='application/json')
+
+    def test_alleen_ingelogde_coach_reageert_als_coach(self):
+        self.assertEqual(self._reactie(Client(), 'coach').status_code, 403)
+        self.assertEqual(self._reactie(Client(), 'teammate').status_code, 200)
+        c = Client()
+        c.force_login(self.coach)
+        self.assertEqual(self._reactie(c, 'coach').status_code, 200)
+        self.assertEqual(list(WedstrijdReactie.objects.order_by('id').values_list('rol', flat=True)), ['teammate', 'coach'])
+        # De keuze "Coach" staat alleen in het formulier voor wie ingelogd is
+        self.assertNotContains(Client().get(self.archief.url), '<option value="coach">')
+        self.assertContains(c.get(self.archief.url), '<option value="coach">')
+
+    def test_admin_login_geblokkeerd_na_te_veel_pogingen_ook_vanaf_andere_adressen(self):
+        for i in range(10):
+            Client(REMOTE_ADDR=f'10.1.0.{i}').post('/admin/login/', {'username': 'zoe', 'password': 'fout'})
+        r = Client(REMOTE_ADDR='10.9.9.9').post('/admin/login/', {'username': 'zoe', 'password': 'geheim-123'})
+        self.assertEqual(r.status_code, 429)
+        # Ook het inlogvenster op de site zelf is dan geblokkeerd voor dit account
+        r = Client(REMOTE_ADDR='10.9.9.8').post('/api/coach-inloggen/', json.dumps(
+            {'page_id': self.page.id, 'gebruikersnaam': 'zoe', 'wachtwoord': 'geheim-123'}), content_type='application/json')
+        self.assertEqual(r.status_code, 429)
+        # Een ander account heeft er geen last van
+        r = Client(REMOTE_ADDR='10.9.9.7').post('/admin/login/', {'username': 'coachtest', 'password': 'coach-wachtwoord-1'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_goede_login_wist_de_teller(self):
+        for _ in range(9):
+            Client().post('/admin/login/', {'username': 'zoe', 'password': 'fout'})
+        self.assertEqual(Client().post('/admin/login/', {'username': 'zoe', 'password': 'geheim-123'}).status_code, 302)
+        for _ in range(9):
+            Client().post('/admin/login/', {'username': 'zoe', 'password': 'fout'})
+        self.assertEqual(Client().post('/admin/login/', {'username': 'zoe', 'password': 'geheim-123'}).status_code, 302)
+
+    def test_echt_ip_achter_proxy(self):
+        from django.test import RequestFactory, override_settings
+        from home.beveiliging import client_ip
+        rf = RequestFactory()
+        verzoek = rf.get('/', REMOTE_ADDR='10.0.0.1', HTTP_X_FORWARDED_FOR='6.6.6.6, 81.2.3.4')
+        self.assertEqual(client_ip(verzoek), '10.0.0.1')  # lokaal: geen proxy
+        with override_settings(ACHTER_PROXY=True):
+            self.assertEqual(client_ip(verzoek), '81.2.3.4')  # niet het vervalsbare eerste adres
+            self.assertEqual(client_ip(rf.get('/', HTTP_CF_CONNECTING_IP='81.9.9.9', REMOTE_ADDR='10.0.0.1')), '81.9.9.9')
