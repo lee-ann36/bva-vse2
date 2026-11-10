@@ -3,7 +3,8 @@ Instellingen voor de live site. Alles wat geheim of per server anders is, komt u
 omgevingsvariabelen (in te stellen bij de hostingpartij):
 
     SECRET_KEY        verplicht: lange willekeurige tekst
-    ALLOWED_HOSTS     verplicht: domeinnaam/-namen, komma-gescheiden (bijv. bva-vse2.fly.dev)
+    ALLOWED_HOSTS     domeinnaam/-namen, komma-gescheiden (bijv. bva-vse2.fly.dev);
+                      op Render hoeft dit niet: het Render-adres wordt automatisch toegevoegd
     DATA_DIR          map op een blijvende schijf voor database + uploads (standaard /data)
 """
 import os
@@ -16,6 +17,8 @@ DEBUG = False
 SECRET_KEY = os.environ['SECRET_KEY']
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):  # door Render zelf ingesteld, bijv. bva-vse2.onrender.com
+    ALLOWED_HOSTS.insert(0, os.environ['RENDER_EXTERNAL_HOSTNAME'])
 CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS if not h.startswith('.')]
 if ALLOWED_HOSTS:
     WAGTAILADMIN_BASE_URL = f'https://{ALLOWED_HOSTS[0]}'

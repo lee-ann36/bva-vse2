@@ -13,7 +13,7 @@ from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand, CommandError
 from wagtail.models import GroupPagePermission
 
-from home.models import PlaysPage, TeamPage, WedstrijdenArchiefPage
+from home.models import PlaysPage, StatsPage, TeamPage, WedstrijdenArchiefPage
 
 GROEP = 'Coaches'
 
@@ -35,7 +35,7 @@ class Command(BaseCommand):
             for code in ('change_page', 'publish_page')
         ]
         paginas = (list(WedstrijdenArchiefPage.objects.all()) + list(PlaysPage.objects.all())
-                   + list(TeamPage.objects.all()))
+                   + list(TeamPage.objects.all()) + list(StatsPage.objects.all()))
         if not paginas:
             self.stdout.write(self.style.WARNING('Geen wedstrijdarchief- of plays-pagina gevonden.'))
         for page in paginas:

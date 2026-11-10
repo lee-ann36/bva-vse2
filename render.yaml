@@ -1,0 +1,28 @@
+# Render-blueprint: in Render kies je "New" -> "Blueprint" en daarna deze repository.
+# Render bouwt dan de Dockerfile en stelt alles hieronder vanzelf in.
+#
+# LET OP (gratis plan): de schijf wordt bij elke update of herstart gewist. De site start dan
+# weer leeg op (pagina's en de accounts hieronder worden automatisch opnieuw aangemaakt),
+# maar alles wat je zelf invoert (speelsters, stats, films, foto's) is dan weg.
+services:
+  - type: web
+    name: bva-vse2
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    healthCheckPath: /up/
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      # Beheerder (Wagtail-admin op /admin/). Vul in bij het aanmaken van de blueprint.
+      - key: ADMIN_GEBRUIKER
+        sync: false
+      - key: ADMIN_WACHTWOORD
+        sync: false
+      # Account om statistieken bij te houden (bijv. voor Zoë). Mag je leeg laten.
+      - key: STATS_GEBRUIKER
+        sync: false
+      - key: STATS_WACHTWOORD
+        sync: false

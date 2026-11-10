@@ -43,6 +43,6 @@ RUN SECRET_KEY=alleen-voor-build ALLOWED_HOSTS=localhost python manage.py collec
 
 # Bij elke start: database bijwerken, dan de webserver.
 # 1 worker met threads, zodat de inlog-blokkade (in het geheugen) voor alle verzoeken geldt.
-CMD set -xe; mkdir -p "$DATA_DIR/media"; python manage.py migrate --noinput; \
+CMD set -xe; mkdir -p "$DATA_DIR/media"; python manage.py migrate --noinput; python manage.py opstarten; \
     exec gunicorn bvesite.wsgi:application --bind "0.0.0.0:$PORT" --workers 1 --threads 8 --timeout 60 \
     --access-logfile -
