@@ -189,6 +189,30 @@
             {% endfor %}
         </div>
     {% endif %}
+
+    {% if accounts %}
+    <!-- ACCOUNTS: wachtwoorden (alleen voor de coach) -->
+    <div class="mt-5" data-accounts>
+        <span class="text-uppercase text-muted small fw-bold">Alleen zichtbaar voor jou als coach</span>
+        <h3 class="fw-bold text-dark mb-1">Accounts en wachtwoorden</h3>
+        <p class="text-muted small mb-3">Pincodes van speelsters wijzig je bij de speelster zelf (knop <strong>Bewerken</strong>).</p>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <ul class="list-group list-group-flush">
+                {% for a in accounts %}
+                    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-2">
+                        <div>
+                            <span class="fw-semibold text-dark">{{ a.naam }}</span>{% if a.is_ik %} <span class="badge bg-light text-dark border">jij</span>{% endif %}
+                            {% for r in a.rollen %}<span class="badge text-white ms-1" style="background-color: #58A6C2;">{{ r }}</span>{% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-id="{{ a.id }}" data-naam="{{ a.naam }}" onclick="openWachtwoord(this)">
+                            <i class="bi bi-key me-1"></i>Wachtwoord wijzigen
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% if kan_spelers_beheren or kan_pagina_bewerken %}
@@ -346,6 +370,37 @@
     </div>
 </div>
 {% endif %}
+{% endif %}
+{% if accounts %}
+<!-- MODAL: WACHTWOORD -->
+<div class="modal fade" id="wachtwoordModal" tabindex="-1" aria-labelledby="wachtwoordTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <form class="modal-content border-0 rounded-4" onsubmit="event.preventDefault(); wachtwoordOpslaan(this);" autocomplete="off">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="wachtwoordTitel"><i class="bi bi-key me-2"></i>WACHTWOORD WIJZIGEN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none team-fout py-2 small" role="alert"></div>
+                <p class="mb-3">Nieuw wachtwoord voor <strong class="ww-naam"></strong></p>
+                <input type="hidden" name="user_id">
+                <label class="form-label small fw-bold" for="ww-nieuw">Nieuw wachtwoord</label>
+                <div class="input-group">
+                    <input id="ww-nieuw" name="wachtwoord" type="text" class="form-control" required minlength="8" maxlength="128"
+                           autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore>
+                    <button type="button" class="btn btn-outline-secondary" onclick="genereerWachtwoord(this)" title="Willekeurig wachtwoord maken">🎲 Maak</button>
+                </div>
+                <div class="form-text">Minstens 8 tekens, niet alleen cijfers en niet te makkelijk te raden. Het oude wachtwoord werkt daarna niet meer.</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% if kan_spelers_beheren or kan_pagina_bewerken or accounts %}
 <script src="{% static 'js/team.js' %}"></script>
 {% endif %}
 <script src="{% static 'js/film_toevoegen.js' %}"></script>

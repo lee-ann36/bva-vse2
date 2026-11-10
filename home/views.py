@@ -933,3 +933,41 @@ def stat_actie_verwijderen(request):
     # Ook als hij al weg is: dan is het doel bereikt
     StatActie.objects.filter(wedstrijd=wedstrijd, client_id=str(data.get('client_id') or '')).delete()
     return JsonResponse({'status': 'success'})
+
+
+# ---------------------------------------------------------------------------
+# Wachtwoord wijzigen (coach: eigen account, trainers en stats)
+# ---------------------------------------------------------------------------
+from django.contrib.auth import get_user_model as _get_user_model, update_session_auth_hash
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as _ValidationError
+
+from .beveiliging import _sleutels as _login_sleutels, mag_wachtwoord_wijzigen
+
+
+@require_POST
+def wachtwoord_wijzigen(request):
+    data = _lees_json(request)
+    if data is None:
+        return _fout('Ongeldige gegevens.')
+    try:
+        doel = _get_user_model().objects.get(pk=int(data.get('user_id')))
+    except (_get_user_model().DoesNotExist, TypeError, ValueError):
+        return _fout('Account niet gevonden.', status=404)
+    if not mag_wachtwoord_wijzigen(request.user, doel):
+        return _fout('Je mag het wachtwoord van dit account niet wijzigen.', status=403)
+
+    wachtwoord = str(data.get('wachtwoord') or '')
+    if len(wachtwoord) > 128:
+        return _fout('Het wachtwoord mag maximaal 128 tekens zijn.')
+    try:
+        validate_password(wachtwoord, doel)
+    except _ValidationError as e:
+        return _fout(' '.join(e.messages))
+
+    doel.set_password(wachtwoord)
+    doel.save(update_fields=['password'])
+    if doel.pk == request.user.pk:
+        update_session_auth_hash(request, doel)  # zelf ingelogd blijven
+    cache.delete_many(_login_sleutels(None, doel.get_username()))  # eventuele blokkade opheffen
+    return JsonResponse({'status': 'success', 'naam': doel.get_username()})

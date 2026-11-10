@@ -1553,3 +1553,74 @@ class InloggenZonderHoofdletterTests(BeveiligingTests):
         for naam in ('Anaïs', 'anaïs', 'ANAÏS', 'Anais', 'anais ', 'ANAIS'):
             self.assertIsNotNone(authenticate(username=naam, password='test-ww-4821'), naam)
         self.assertIsNone(authenticate(username='Anais', password='fout'))
+
+
+class WachtwoordBeheerTests(TestCase):
+    """De coach wijzigt op de teampagina wachtwoorden: eigen, trainers en stats. Nooit beheerder of andere coach."""
+
+    def setUp(self):
+        from django.contrib.auth.models import Group
+        cache.clear()
+        root = Page.get_first_root_node()
+        Site.objects.all().delete()
+        home = HomePage(title='Home', slug='ww-home', koptekst='x')
+        root.add_child(instance=home)
+        Site.objects.create(hostname='testserver', root_page=home, is_default_site=True)
+        self.team = TeamPage(title='Ons team', slug='team')
+        home.add_child(instance=self.team)
+        U = get_user_model()
+        maak = lambda naam, *groepen: self._lid(U.objects.create_user(naam, password='oud-wachtwoord-1'), groepen)
+        self.coach = maak('coach1', 'Coaches', 'Trainers')
+        self.coach2 = maak('coach2', 'Coaches')
+        self.trainer = maak('trainer1', 'Trainers')
+        self.stats = maak('stats1', 'Statistieken')
+        self.los = maak('bezoeker1')
+        self.admin = U.objects.create_superuser('baas', '', 'oud-wachtwoord-1')
+
+    def _lid(self, user, groepen):
+        from django.contrib.auth.models import Group
+        for g in groepen:
+            user.groups.add(Group.objects.get_or_create(name=g)[0])
+        return user
+
+    def _wijzig(self, client, doel, ww='Nieuw-ww-2026'):
+        return client.post('/api/team/wachtwoord/', json.dumps({'user_id': doel.id, 'wachtwoord': ww}), content_type='application/json')
+
+    def _client(self, user):
+        c = Client(); c.force_login(user); return c
+
+    def test_coach_wijzigt_eigen_trainers_en_stats(self):
+        c = self._client(self.coach)
+        for doel in (self.coach, self.trainer, self.stats):
+            self.assertEqual(self._wijzig(c, doel).status_code, 200, doel.username)
+            doel.refresh_from_db()
+            self.assertTrue(doel.check_password('Nieuw-ww-2026'))
+        # Na het wijzigen van je eigen wachtwoord blijf je ingelogd
+        self.assertEqual(self._wijzig(c, self.trainer, 'Nog-een-2026').status_code, 200)
+
+    def test_coach_niet_bij_beheerder_of_andere_coach(self):
+        c = self._client(self.coach)
+        for doel in (self.admin, self.coach2, self.los):
+            self.assertEqual(self._wijzig(c, doel).status_code, 403, doel.username)
+            doel.refresh_from_db()
+            self.assertTrue(doel.check_password('oud-wachtwoord-1'))
+
+    def test_trainer_en_bezoeker_mogen_niets(self):
+        for actor in (self.trainer, self.stats, self.los):
+            self.assertEqual(self._wijzig(self._client(actor), self.trainer).status_code, 403, actor.username)
+        self.assertEqual(self._wijzig(Client(), self.trainer).status_code, 403)
+
+    def test_te_makkelijk_wachtwoord(self):
+        c = self._client(self.coach)
+        for ww in ('kort', '12345678', 'password'):
+            self.assertEqual(self._wijzig(c, self.trainer, ww).status_code, 400, ww)
+
+    def test_teampagina_toont_alleen_toegestane_accounts(self):
+        r = self._client(self.coach).get(self.team.url)
+        namen = [a['naam'] for a in r.context['accounts']]
+        self.assertEqual(namen[0], 'coach1')  # eigen account eerst
+        self.assertEqual(set(namen), {'coach1', 'trainer1', 'stats1'})
+        self.assertContains(r, 'Accounts en wachtwoorden')
+        r = self._client(self.trainer).get(self.team.url)
+        self.assertEqual(r.context['accounts'], [])
+        self.assertNotContains(r, 'Accounts en wachtwoorden')

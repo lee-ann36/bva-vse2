@@ -887,6 +887,8 @@ class TeamPage(Page):
                 }
                 for s in alle
             }
+        from .beveiliging import beheerbare_accounts
+        context['accounts'] = beheerbare_accounts(request.user)
         if kan_pagina:
             context['staf_data'] = {
                 b.id: {

@@ -33,6 +33,7 @@ from home.views import (
     stat_actie,
     stat_actie_verwijderen,
     verwijder_reactie,
+    wachtwoord_wijzigen,
     wedstrijd_opslaan,
     wedstrijd_verwijderen,
 )
@@ -56,6 +57,7 @@ urlpatterns = [
     path('api/team/staf-opslaan/', staf_opslaan, name='staf_opslaan'),
     path('api/team/staf-verwijderen/', staf_verwijderen, name='staf_verwijderen'),
     path('api/team/info-opslaan/', teaminfo_opslaan, name='teaminfo_opslaan'),
+    path('api/team/wachtwoord/', wachtwoord_wijzigen, name='wachtwoord_wijzigen'),
     path('api/coach-inloggen/', coach_inloggen, name='coach_inloggen'),
     path('api/coach-uitloggen/', coach_uitloggen, name='coach_uitloggen'),
 

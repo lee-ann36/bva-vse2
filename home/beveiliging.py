@@ -107,3 +107,47 @@ class AdminLoginBlokkade:
                 and is_geblokkeerd(request, request.POST.get('username'))):
             return HttpResponse(BLOKKADE_MELDING, status=429, content_type='text/plain; charset=utf-8')
         return self.get_response(request)
+
+
+# ---------------------------------------------------------------------------
+# Wachtwoorden beheren op de teampagina (voor de coach)
+# ---------------------------------------------------------------------------
+ROL_GROEPEN = [('Coaches', 'Coach'), ('Trainers', 'Trainer'), ('Statistieken', 'Stats')]
+
+
+def kan_accounts_beheren(user):
+    return bool(user and user.is_authenticated and (user.is_superuser or user.groups.filter(name='Coaches').exists()))
+
+
+def mag_wachtwoord_wijzigen(actor, doel):
+    """
+    Een coach mag zijn eigen wachtwoord wijzigen en dat van trainers en stats-accounts.
+    Nooit dat van de beheerder (superuser) of van een andere coach: zo kan niemand via deze
+    knop een account met meer rechten overnemen. De beheerder zelf mag alle andere accounts.
+    """
+    if not kan_accounts_beheren(actor) or not doel.is_active:
+        return False
+    if doel.pk == actor.pk:
+        return True
+    if doel.is_superuser:
+        return False
+    if actor.is_superuser:
+        return True
+    namen = set(doel.groups.values_list('name', flat=True))
+    return 'Coaches' not in namen and bool(namen & {'Trainers', 'Statistieken'})
+
+
+def beheerbare_accounts(actor):
+    """Accounts waarvan deze gebruiker het wachtwoord mag wijzigen, eigen account eerst."""
+    if not kan_accounts_beheren(actor):
+        return []
+    User = get_user_model()
+    accounts = [u for u in User.objects.filter(is_active=True).prefetch_related('groups').order_by('username')
+                if mag_wachtwoord_wijzigen(actor, u)]
+    accounts.sort(key=lambda u: u.pk != actor.pk)
+    uit = []
+    for u in accounts:
+        namen = {g.name for g in u.groups.all()}
+        rollen = [label for groep, label in ROL_GROEPEN if groep in namen] or (['Beheerder'] if u.is_superuser else [])
+        uit.append({'id': u.pk, 'naam': u.get_username(), 'rollen': rollen, 'is_ik': u.pk == actor.pk})
+    return uit

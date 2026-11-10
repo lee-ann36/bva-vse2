@@ -95,6 +95,43 @@
         veld.value = String(getal[0] % 10000).padStart(4, '0');
     };
 
+    // ---- Wachtwoorden (coach) ----
+    window.openWachtwoord = function (knop) {
+        const form = document.querySelector('#wachtwoordModal form');
+        form.reset();
+        fout(form, '');
+        form.elements.user_id.value = knop.dataset.id;
+        form.querySelector('.ww-naam').textContent = knop.dataset.naam;
+        form.dataset.naam = knop.dataset.naam;
+        toonModal('wachtwoordModal');
+    };
+
+    window.genereerWachtwoord = function (knop) {
+        const tekens = 'abcdefghjkmnpqrstuvwxyz23456789';
+        const getallen = new Uint32Array(8);
+        window.crypto.getRandomValues(getallen);
+        knop.closest('.input-group').querySelector('input').value =
+            'vse2-' + Array.from(getallen, g => tekens[g % tekens.length]).join('');
+    };
+
+    window.wachtwoordOpslaan = async function (form) {
+        fout(form, '');
+        if (!form.reportValidity()) return;
+        const knop = form.querySelector('[type="submit"]');
+        const wachtwoord = form.elements.wachtwoord.value;
+        knop.disabled = true;
+        try {
+            await verstuur('/api/team/wachtwoord/', { user_id: form.elements.user_id.value, wachtwoord: wachtwoord }, false);
+            window.bootstrap.Modal.getInstance(document.getElementById('wachtwoordModal')).hide();
+            alert('Opgeslagen! Het nieuwe wachtwoord van ' + form.dataset.naam + ' is: ' + wachtwoord +
+                  '\n\nGeef het privé door. Het is hierna niet meer te zien.');
+        } catch (e) {
+            fout(form, e.message);
+        } finally {
+            knop.disabled = false;
+        }
+    };
+
     // ---- Staf ----
     window.openStaf = function (blockId) {
         const form = document.querySelector('#stafModal form');
