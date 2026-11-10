@@ -1,8 +1,10 @@
 """
 Maakt (of herstelt) de groep "Trainers".
 
-Trainers mogen inloggen, opdrachten toevoegen/bewerken/verwijderen (ook via de admin)
-en de trainingspagina publiceren. Andere pagina's mogen ze niet aanpassen.
+Trainers mogen alleen trainingsopdrachten beheren (toevoegen, bewerken, verwijderen) op de
+trainingspagina. Geen films, plays, mededelingen, speelsters of reacties van anderen, en geen
+toegang tot de Wagtail-admin. De rechten worden elke keer precies zo gezet: wat er ooit extra bij
+is gekomen, wordt weer weggehaald.
 
 Gebruik:
     python manage.py trainer_rechten
@@ -27,17 +29,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         groep, nieuw = Group.objects.get_or_create(name=GROEP)
-        groep.permissions.add(Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin'))
-        for code in ('add_mededeling', 'change_mededeling', 'delete_mededeling', 'add_speler', 'change_speler'):
-            groep.permissions.add(Permission.objects.get(content_type__app_label='home', codename=code))
-        for code in ('add_opdracht', 'change_opdracht', 'delete_opdracht'):
-            groep.permissions.add(Permission.objects.get(content_type__app_label='home', codename=code))
+        groep.permissions.set(Permission.objects.filter(
+            content_type__app_label='home', codename__in=['add_opdracht', 'change_opdracht', 'delete_opdracht']))
 
         page_perms = [
             Permission.objects.get(content_type__app_label='wagtailcore', codename=code)
             for code in ('change_page', 'publish_page')
         ]
         paginas = list(TrainingPage.objects.all())
+        # Alleen rechten op de trainingspagina; rechten op andere pagina's weghalen
+        GroupPagePermission.objects.filter(group=groep).exclude(page__in=paginas).delete()
         if not paginas:
             self.stdout.write(self.style.WARNING('Geen trainingspagina gevonden.'))
         for page in paginas:

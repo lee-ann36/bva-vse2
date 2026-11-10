@@ -876,18 +876,22 @@ class BeheerOpDeSiteTests(TestCase):
     # --- homepage: inloggen en mededelingen ---
     def test_inloggen_op_homepage(self):
         c = self._c()
-        r = self._json(c, '/api/coach-inloggen/', {'page_id': self.home.id, 'gebruikersnaam': 'trainer', 'wachtwoord': 'geheim123'})
+        r = self._json(c, '/api/coach-inloggen/', {'page_id': self.home.id, 'gebruikersnaam': 'coach', 'wachtwoord': 'geheim123'})
         self.assertEqual(r.status_code, 200)
+        # Een trainer mag op de homepage niets (alleen trainingsopdrachten)
+        r = self._json(self._c(), '/api/coach-inloggen/', {'page_id': self.home.id, 'gebruikersnaam': 'trainer', 'wachtwoord': 'geheim123'})
+        self.assertEqual(r.status_code, 403)
         r = self._json(self._c(), '/api/coach-inloggen/', {'page_id': self.home.id, 'gebruikersnaam': 'bezoeker', 'wachtwoord': 'geheim123'})
         self.assertEqual(r.status_code, 403)
         self.assertContains(Client().get(self.home.url), 'Coach of trainer? Inloggen')
 
     def test_mededeling_plaatsen_bewerken_verwijderen(self):
-        c = self._c('trainer')
+        self.assertEqual(self._json(self._c('trainer'), '/api/mededeling-opslaan/', {'titel': 'X'}).status_code, 403)
+        c = self._c('coach')
         r = self._json(c, '/api/mededeling-opslaan/', {'titel': 'Eerder in de zaal', 'tekst': '30 min', 'belangrijk': True})
         self.assertEqual(r.status_code, 200, r.content)
         m = Mededeling.objects.get()
-        self.assertEqual((m.aangemaakt_door, m.belangrijk, m.zichtbaar_vanaf), (self.trainer, True, timezone.localdate()))
+        self.assertEqual((m.aangemaakt_door, m.belangrijk, m.zichtbaar_vanaf), (self.coach, True, timezone.localdate()))
         r = self._json(c, '/api/mededeling-opslaan/', {'id': m.id, 'titel': 'Aangepast', 'tekst': '', 'belangrijk': False})
         m.refresh_from_db()
         self.assertEqual((m.titel, m.belangrijk), ('Aangepast', False))
@@ -902,9 +906,30 @@ class BeheerOpDeSiteTests(TestCase):
             'titel': 'X', 'zichtbaar_vanaf': '2026-11-10', 'zichtbaar_tot': '2026-11-01'})
         self.assertEqual(r.status_code, 400)
 
+    # --- trainers: alleen trainingsopdrachten ---
+    def test_trainer_mag_alleen_opdrachten(self):
+        from home.models import is_moderator
+        self.assertEqual(set(self.trainer.get_all_permissions()),
+                         {'home.add_opdracht', 'home.change_opdracht', 'home.delete_opdracht'})
+        self.assertFalse(is_moderator(self.trainer))  # geen reacties van anderen beheren, niet als coach reageren
+        for page in (self.home, self.archief, self.plays, self.team):
+            self.assertFalse(page.permissions_for_user(self.trainer).can_publish(), page.title)
+        self.assertTrue(self.training.permissions_for_user(self.trainer).can_publish())
+        r = self._json(self._c('trainer'), '/api/film-toevoegen/', {
+            'page_id': self.archief.id, 'titel': 'X', 'datum_str': '1 oktober 2026', 'uitslag': '1-0', 'youtube_url': 'https://youtu.be/abc'})
+        self.assertEqual(r.status_code, 403)
+        # Oude, ruimere rechten worden bij het opnieuw draaien weer weggehaald
+        from django.contrib.auth.models import Permission
+        groep = Group.objects.get(name='Trainers')
+        groep.permissions.add(Permission.objects.get(codename='add_mededeling'))
+        call_command('trainer_rechten', stdout=open(__import__('os').devnull, 'w'))
+        self.assertNotIn('add_mededeling', groep.permissions.values_list('codename', flat=True))
+
     # --- teampagina: spelers ---
     def test_speler_toevoegen_met_foto_en_pincode(self):
-        r = self._form(self._c('trainer'), '/api/team/speler-opslaan/', {
+        r = self._form(self._c('trainer'), '/api/team/speler-opslaan/', {'naam': 'X', 'pincode': '1111'})
+        self.assertEqual(r.status_code, 403)  # trainers beheren alleen opdrachten
+        r = self._form(self._c('coach'), '/api/team/speler-opslaan/', {
             'naam': 'Nieuwe', 'rugnummer': '12', 'positie': 'C', 'actief': 'on', 'pincode': '4321', 'foto': _test_foto()})
         self.assertEqual(r.status_code, 200, r.content)
         s = Speler.objects.get(naam='Nieuwe')
@@ -949,12 +974,12 @@ class BeheerOpDeSiteTests(TestCase):
         self.team.refresh_from_db()
         self.assertEqual(len(self.team.staf), 0)
 
-    def test_trainer_mag_spelers_maar_geen_staf(self):
+    def test_trainer_beheert_geen_spelers_of_staf(self):
         r = self._form(self._c('trainer'), '/api/team/staf-opslaan/', {'page_id': self.team.id, 'naam': 'X', 'rol': 'Y'})
         self.assertEqual(r.status_code, 403)
         c = Client(); c.login(username='trainer', password='geheim123')
         html = c.get(self.team.url).content.decode()
-        self.assertIn('Speelster toevoegen', html)
+        self.assertNotIn('Speelster toevoegen', html)
         self.assertNotIn('Staflid toevoegen', html)
 
 
