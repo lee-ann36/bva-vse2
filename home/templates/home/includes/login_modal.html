@@ -1,0 +1,32 @@
+{% load static %}
+{# Inloggen voor coaches en trainers, op de pagina zelf. Gebruikt `soort` voor de teksten. #}
+<button type="button" class="btn btn-sm btn-link small text-muted text-decoration-none px-0" data-bs-toggle="modal" data-bs-target="#coachLoginModal">
+    <i class="bi bi-lock me-1"></i>{% if soort == "opdracht" %}Trainer? Log in om opdrachten toe te voegen{% elif soort == "team" %}Coach of trainer? Log in om het team te beheren{% elif soort == "play" %}Coach? Log in om plays toe te voegen{% elif soort == "stats" %}Log in om statistieken bij te houden{% else %}Coach? Log in om films toe te voegen{% endif %}
+</button>
+
+<div class="modal fade" id="coachLoginModal" tabindex="-1" aria-labelledby="coachLoginTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <form class="modal-content border-0 rounded-4" data-page-id="{{ page.id }}"
+              onsubmit="event.preventDefault(); coachInloggen(this);">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="coachLoginTitel"><i class="bi bi-person-lock me-2"></i>{% if soort == "opdracht" %}INLOGGEN TRAINER{% elif soort == "team" %}INLOGGEN COACH / TRAINER{% elif soort == "stats" %}INLOGGEN STATISTIEKEN{% else %}INLOGGEN COACH{% endif %}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none login-fout py-2 small" role="alert"></div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold" for="coach-gebruikersnaam">Naam</label>
+                    <input id="coach-gebruikersnaam" name="gebruikersnaam" class="form-control" autocomplete="username" required autofocus>
+                </div>
+                <div>
+                    <label class="form-label small fw-bold" for="coach-wachtwoord">Wachtwoord</label>
+                    <input id="coach-wachtwoord" name="wachtwoord" type="password" class="form-control" autocomplete="current-password" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Inloggen</button>
+            </div>
+        </form>
+    </div>
+</div>

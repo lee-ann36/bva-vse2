@@ -1,0 +1,7 @@
+Django>=6.1,<6.2
+wagtail>=8.0,<8.1
+requests>=2.34,<3
+icalendar>=7.3,<8
+whitenoise>=6.12,<7
+gunicorn==25.1.0
+pywebpush>=2.5,<3

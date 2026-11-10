@@ -1,0 +1,81 @@
+/* Statistiekenpagina: overzicht-tabellen en het bijhoud-scherm (gemaakt voor een telefoon langs het veld). */
+
+.bva-verloop { background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%); }
+
+/* ---- Tabellen ---- */
+.stats-tabel { font-size: 0.85rem; white-space: nowrap; }
+.stats-tabel th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7280; cursor: help; }
+.stats-tabel th, .stats-tabel td { text-align: center; vertical-align: middle; padding: 0.45rem 0.5rem; }
+.stats-tabel .naam { text-align: left; position: sticky; left: 0; background: #ffffff; z-index: 1; font-weight: 600; }
+.stats-tabel thead .naam { background: #ffffff; }
+.stats-tabel .naam a { color: #112233; text-decoration: none; }
+.stats-tabel .naam a:hover { color: #58A6C2; }
+.stats-tabel .team-rij td { background: #eef7fa; font-weight: 700; border-top: 2px solid #58A6C2; }
+.list-group-item.actief { background: #eef7fa; border-left: 4px solid #58A6C2; }
+
+/* ---- Bijhouden ---- */
+.stats-live { max-width: 1200px; margin: 0 auto; }
+.live-scorebord { position: sticky; top: 0; z-index: 10; background: #0b172a; color: #ffffff; }
+.live-score { font-size: 2.6rem; font-weight: 800; line-height: 1; }
+.btn-kwart {
+    min-width: 46px; font-weight: 700; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px; padding: 4px 12px;
+}
+.btn-kwart.actief { background: #58A6C2; border-color: #58A6C2; color: #ffffff; }
+.btn-kwart:hover { color: #ffffff; background: rgba(255, 255, 255, 0.12); }
+.btn-kwart.actief:hover { background: #58A6C2; }
+
+/* Met wedstrijdfilm: op een laptop video + scorebord links (blijven staan), knoppen rechts */
+.met-film .live-scorebord { position: static; }
+@media (min-width: 992px) {
+    .stats-live.met-film {
+        max-width: 1600px; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+        column-gap: 1rem; align-items: start;
+    }
+    .met-film > .live-kop { grid-column: 1 / -1; }
+    .met-film > .live-boven { position: sticky; top: 10px; }
+    .met-film > .row > [class*="col-lg"] { flex: 0 0 100%; max-width: 100%; }
+}
+
+.stap-kop { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin-bottom: 0.6rem; }
+
+.spelers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.btn-speler {
+    border: 2px solid #d7e3ea; background: #ffffff; border-radius: 14px; padding: 8px 6px; text-align: center;
+    min-height: 64px; line-height: 1.15; color: #112233; transition: transform 0.05s ease;
+}
+.btn-speler .nr { font-size: 0.7rem; color: #6b7280; }
+.btn-speler .nm { font-weight: 700; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-speler .info { font-size: 0.7rem; color: #6b7280; }
+.btn-speler .fouten-veel { color: #dc3545; font-weight: 700; }
+.btn-speler.gekozen { border-color: #58A6C2; background: #58A6C2; color: #ffffff; }
+.btn-speler.gekozen .nr, .btn-speler.gekozen .info { color: rgba(255, 255, 255, 0.85); }
+.btn-speler.gekozen .fouten-veel { color: #ffffff; }
+.spelers-grid.flits { outline: 3px solid #58A6C2; outline-offset: 4px; border-radius: 14px; }
+.btn-speler:active, .btn-actie:active { transform: scale(0.96); }
+
+.acties-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.acties-klein { grid-template-columns: repeat(4, 1fr); }
+.acties-tegen { grid-template-columns: repeat(3, 1fr); }
+.btn-actie {
+    border: none; border-radius: 14px; min-height: 58px; font-weight: 800; font-size: 1.15rem;
+    background: #e9eef2; color: #112233; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; line-height: 1.1; padding: 4px; transition: transform 0.05s ease;
+}
+.btn-actie small { font-size: 0.65rem; font-weight: 600; opacity: 0.75; }
+.acties-klein .btn-actie { font-size: 0.9rem; min-height: 54px; }
+.btn-actie.raak { background: #198754; color: #ffffff; }
+.btn-actie.mis { background: #ffffff; color: #b02a37; border: 2px solid #e8b4b9; }
+.btn-actie.fout { background: #fff3cd; color: #7a5b00; }
+.btn-actie.tegen { background: #112233; color: #ffffff; }
+.btn-actie:disabled { opacity: 0.45; }
+.btn-actie.flits { box-shadow: 0 0 0 4px #58A6C2; }
+
+[data-log] .list-group-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; }
+[data-log] .kw { font-weight: 700; color: #58A6C2; min-width: 24px; }
+[data-log] .wacht { color: #b58100; }
+
+@media (max-width: 575px) {
+    .acties-klein { grid-template-columns: repeat(4, 1fr); }
+    .live-score { font-size: 2.2rem; }
+}

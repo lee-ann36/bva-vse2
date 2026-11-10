@@ -1,0 +1,202 @@
+{% extends "home/base.html" %}
+{% load wagtailcore_tags static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/wedstrijd_archief.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- SLIMME, COMPACTE HERO BANNER -->
+<div class="text-white hero-compact px-4 px-lg-5 mb-4">
+    <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            <span class="text-uppercase text-slam fw-bold small tracking-wider">TEAM VSE-2 ARCHIEF</span>
+            <h1 class="display-6 fw-bold text-white mb-0">
+                WEDSTRIJD ARCHIEF
+            </h1>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-dark border border-secondary text-light px-3 py-2">Laatste Beelden & Analyses</span>
+        </div>
+    </div>
+</div>
+
+<!-- INHOUD: TERUG-KNOP & WEDSTRIJDEN -->
+<div class="container-fluid px-4 px-lg-5 pb-5">
+    
+    <!-- Terug knop boven de content met een marge van 30px -->
+    <div class="row" style="margin-bottom: 30px;">
+     <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Terug naar homepage
+        </a>
+        {% include "home/includes/coach_balk.html" with soort="wedstrijd" %}
+     </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- LINKERKOLOM: Selecteer een wedstrijd -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold fs-6">GESPEELDE WEDSTRIJDEN</h5>
+                    <span class="badge" style="background-color: #58A6C2;">VSE-2</span>
+                </div>
+                <div class="list-group list-group-flush" id="wedstrijd-list">
+                    {% for block in page.wedstrijden %}
+                        <button type="button" 
+                                class="list-group-item list-group-item-action p-3 border-bottom d-flex justify-content-between align-items-center {% if forloop.first %}active-match bg-slam text-white{% endif %}"
+                                onclick="selectMatch(this, 'match-{{ forloop.counter0 }}')">
+                            <div>
+                                <div class="fw-bold match-title">{{ block.value.titel }}</div>
+                                <small class="opacity-75">{{ block.value.datum_str }}</small>
+                            </div>
+                            <span class="badge bg-light text-dark rounded-pill">{{ block.value.uitslag }}</span>
+                        </button>
+                    {% empty %}
+                        <div class="p-3 text-muted">Geen wedstrijden gevonden.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- RECHTERKOLOM: Video & Details -->
+        <div class="col-lg-8">
+            {% for block, reacties in wedstrijden_met_reacties %}
+                <div class="match-content-card card border-0 shadow-sm rounded-4 overflow-hidden mb-4 {% if not forloop.first %}d-none{% endif %}" id="match-{{ forloop.counter0 }}">
+                    
+                    <div class="row g-0">
+                        <!-- LINKSDELEN: De YouTube Video -->
+                        <div class="col-xl-7 bg-dark d-flex align-items-center">
+                            <div class="ratio ratio-16x9 w-100">
+                                <iframe id="youtube-player-{{ forloop.counter0 }}"
+                                        src="{{ block.value.get_embed_url }}" 
+                                        title="{{ block.value.titel }}" 
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                </iframe>
+                            </div>
+                        </div>
+
+                        <!-- RECHTSDELEN: Details & Uitslag -->
+                        <div class="col-xl-5 bg-white p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                {% if kan_film_toevoegen %}
+                                <div class="d-flex justify-content-end gap-1 mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2" onclick="openFormulier('{{ block.id }}')">
+                                        <i class="bi bi-pencil me-1"></i>Bewerken
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill py-0 px-2" title="Verwijderen"
+                                            data-naam="{{ block.value.titel }}" onclick="filmVerwijderen('{{ block.id }}', this.dataset.naam)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                                <span class="badge mb-2 text-white" style="background-color: #58A6C2;">WEDSTRIJD ANALYSE</span>
+                                <h3 class="fw-bold text-dark mb-1">{{ block.value.titel }}</h3>
+                                <p class="text-muted small mb-3"><i class="bi bi-calendar-event me-1 text-slam"></i> Datum: {{ block.value.datum_str }}</p>
+                                <hr class="text-muted opacity-25">
+                                
+                                <div class="mb-3">
+                                    <span class="text-uppercase small text-muted fw-bold d-block mb-1">Einduitslag</span>
+                                    <div class="h3 fw-bold text-slam mb-0">{{ block.value.uitslag }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-top">
+                                <small class="text-muted"><i class="bi bi-info-circle me-1 text-slam"></i> Coach-opmerking: Bekijk de fragmenten voor de bespreking.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ONDERKANT: Commentaar & Reacties Sectie (Schoon en uniek) -->
+                    <div class="card-footer bg-white border-top p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-dark mb-0"><i class="bi bi-chat-left-text me-2 text-slam"></i>Coach & Teammate Reacties</h5>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openAddCommentModal('match-{{ forloop.counter0 }}-reacties')">
+                                <i class="bi bi-plus-lg me-1"></i> Voeg reactie toe
+                            </button>
+                        </div>
+
+                        <!-- Lijst met reacties geladen uit de Database -->
+                        <div class="reacties-container d-flex flex-column gap-3" id="match-{{ forloop.counter0 }}-reacties">
+                            {% for reactie in reacties %}
+                                {% include "home/includes/reactie.html" %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Formulier om toe te voegen -->
+                        <div class="mt-3 pt-3 border-top add-comment-form d-none">
+                            <h6>Nieuwe reactie plaatsen</h6>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-control-sm author-input" placeholder="Jouw naam..." required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm role-input">
+                                        <option value="teammate">Teammate</option>
+                                        <option value="coach">Coach</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <textarea class="form-control form-control-sm text-input mt-2" rows="2" placeholder="Typ je notitie of commentaar hier..." required></textarea>
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    <button type="button" class="btn btn-sm btn-slam px-3" onclick="saveCommentToDatabase(this, {{ page.id }}, '{{ block.id }}')">Plaatsen</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 ms-1" onclick="cancelComment(this)">Annuleren</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Selecteer een wedstrijd in de linker sidebar
+function selectMatch(element, matchId) {
+    document.querySelectorAll('#wedstrijd-list button').forEach(btn => {
+        btn.classList.remove('text-white');
+        btn.style.backgroundColor = '';
+        btn.classList.remove('active-match');
+    });
+    
+    element.classList.add('active-match', 'text-white');
+    element.style.backgroundColor = '#58A6C2';
+
+    document.querySelectorAll('.match-content-card').forEach(card => {
+        card.classList.add('d-none');
+    });
+    document.getElementById(matchId).classList.remove('d-none');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const activeBtn = document.querySelector('.list-group-item.active-match');
+    if(activeBtn) {
+        activeBtn.style.backgroundColor = '#58A6C2';
+    }
+
+    // Open direct een specifieke wedstrijd via ?wedstrijd=N (bijv. vanaf de homepage)
+    const gekozen = new URLSearchParams(window.location.search).get('wedstrijd');
+    if (gekozen !== null && /^\d+$/.test(gekozen)) {
+        const knop = document.querySelectorAll('#wedstrijd-list button')[parseInt(gekozen, 10)];
+        if (knop && document.getElementById('match-' + gekozen)) {
+            selectMatch(knop, 'match-' + gekozen);
+            knop.scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+});
+
+</script>
+{% endblock %}
+
+{% block reacties_js %}
+    <script src="{% static 'js/reacties.js' %}"></script>
+{% endblock %}

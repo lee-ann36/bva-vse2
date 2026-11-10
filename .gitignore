@@ -1,0 +1,26 @@
+# Database: bevat wachtwoorden (gehasht), pincodes en de sleutel voor pushmeldingen
+*.sqlite3
+*.sqlite3-journal
+
+# Geüploade foto's en documenten (foto's van speelsters)
+/media/
+
+# Verzamelde statische bestanden (worden bij het bouwen opnieuw gemaakt)
+/static/
+
+# Eigen lokale instellingen en geheimen
+bvesite/settings/local.py
+.env
+.env.*
+
+# Python
+/venv/
+__pycache__/
+*.pyc
+
+# Editors en systeem
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,65 @@
+/* Wedstrijd Archief Styles - SLAM & Playbook Thema */
+
+.archief-container {
+    background-color: #f4f6f8;
+    min-height: 100vh;
+}
+
+/* Compacte Hero Banner */
+.hero-compact {
+    background-color: #0b172a;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    border-bottom: 3px solid #58A6C2;
+}
+
+/* SLAM Accentkleur toepassingen */
+.text-slam {
+    color: #58A6C2 !important;
+}
+
+.btn-slam {
+    background-color: #58A6C2;
+    color: #ffffff;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-slam:hover {
+    background-color: #4a90a8;
+    color: #ffffff;
+}
+
+/* Actieve wedstrijd in de sidebar met SLAM accent */
+.list-group-item.active-match, 
+.list-group-item.active-match:hover {
+    background-color: #58A6C2 !important;
+    border-color: #58A6C2 !important;
+    color: #ffffff !important;
+}
+
+.match-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: none;
+    overflow: hidden;
+}
+
+.score-badge {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #58A6C2;
+}
+
+.coach-notes-box {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    border-left: 4px solid 
+    #58A6C2;
+}
+
+.btn btn-outline-secondary{
+    margin-bottom: 30px;
+}

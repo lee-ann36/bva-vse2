@@ -1,0 +1,193 @@
+{% load wagtailcore_tags %}
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Volledig Programma - VSE-2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f1ea;
+            color: #112233;
+            margin: 0;
+            padding: 0;
+        }
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 60px;
+            background-color: #112233;
+            color: white;
+        }
+        .nav-logo {
+            font-weight: bold;
+            font-size: 15px;
+            letter-spacing: 1px;
+            text-decoration: none;
+            color: white;
+        }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.85;
+        }
+        .nav-links a:hover {
+            opacity: 1;
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        .section-subtitle {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #58A6C2;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .section-title {
+            font-size: 36px;
+            font-weight: 900;
+            color: #112233;
+            margin-top: 0;
+            margin-bottom: 40px;
+        }
+
+        /* Wedstrijd rijen */
+        .game-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-bottom: 1px solid #dcd6cd;
+            padding: 20px 25px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .game-date-col {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            width: 130px;
+        }
+        .game-day {
+            font-size: 26px;
+            font-weight: bold;
+            color: #112233;
+        }
+        .game-month {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #666;
+        }
+        .game-info-col {
+            flex-grow: 1;
+            padding-left: 20px;
+        }
+        .game-teams-text {
+            font-size: 16px;
+            font-weight: bold;
+            color: #112233;
+            margin-bottom: 4px;
+        }
+        .game-location-text {
+            font-size: 13px;
+            color: #666;
+        }
+        .badge-thuis-uit {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 20px;
+        }
+        .badge-thuis {
+            background-color: #58A6C2;
+            color: #112233;
+        }
+        .badge-uit {
+            background-color: #d1c7bc;
+            color: #112233;
+        }
+        .game-time-col {
+            font-size: 20px;
+            font-weight: bold;
+            color: #112233;
+            min-width: 70px;
+            text-align: right;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 40px;
+            color: #58A6C2;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 19px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <a href="/" class="nav-logo">BVA VSE-2</a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="#">Wedstrijden</a>
+            <a href="#">Plays</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="/" class="back-link">← Terug naar home</a>
+        <div class="section-subtitle">Seizoenoverzicht</div>
+        <div class="section-title">Volledig Programma</div>
+
+        {% if alle_games %}
+            {% for game in alle_games %}
+                <div class="game-row">
+                    <div class="game-date-col">
+                        <span class="game-day">{{ game.datum|date:"j" }}</span>
+                        <span class="game-month">{{ game.datum|date:"M" }}</span>
+                    </div>
+                    <div class="game-info-col">
+                        <div class="game-teams-text">{{ game.titel }}</div>
+                        <div class="game-location-text">{{ game.locatie }}</div>
+                    </div>
+                    <div>
+                        <span class="badge-thuis-uit {% if game.thuis_uit == 'THUIS' %}badge-thuis{% else %}badge-uit{% endif %}">
+                            {{ game.thuis_uit }}
+                        </span>
+                    </div>
+                    <div class="game-time-col">
+                        {{ game.datum|date:"H:i" }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">Geen wedstrijden gevonden in het programma.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

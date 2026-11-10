@@ -1,0 +1,461 @@
+{% extends "home/base.html" %}
+{% load wagtailcore_tags static %}
+
+{% block title %}Statistieken | BVA VSE-2{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/wedstrijd_archief.css' %}">
+    <link rel="stylesheet" href="{% static 'css/stats.css' %}">
+{% endblock %}
+
+{% block content %}
+{% if bijhouden %}
+{# ======================================================================= #}
+{# BIJHOUDEN: één wedstrijd live noteren                                    #}
+{# ======================================================================= #}
+{% with met_film=bijhouden_film.embed_url %}
+<div class="container-fluid px-3 px-lg-5 py-3 stats-live{% if met_film %} met-film{% endif %}" data-stats-live>
+    <div class="live-kop d-flex justify-content-between align-items-center mb-2 gap-2">
+        <a href="{{ page.url }}?wedstrijd={{ bijhouden.id }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" data-verlaat>
+            <i class="bi bi-arrow-left me-1"></i> Klaar
+        </a>
+        <span class="small text-muted text-truncate">{{ bijhouden.datum|date:"j M Y" }} · {% if bijhouden.thuis %}thuis{% else %}uit{% endif %}</span>
+    </div>
+
+    {% if met_film %}<div class="live-boven">{% endif %}
+    <!-- Scorebord (blijft bovenaan staan) -->
+    <div class="live-scorebord card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center text-center">
+                <div class="flex-fill">
+                    <div class="small fw-bold text-uppercase opacity-75">VSE-2</div>
+                    <div class="live-score" data-score-wij>0</div>
+                </div>
+                <div class="px-2 opacity-50 fs-3">–</div>
+                <div class="flex-fill">
+                    <div class="small fw-bold text-uppercase opacity-75 text-truncate">{{ bijhouden.tegenstander }}</div>
+                    <div class="live-score" data-score-zij>0</div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center gap-1 mt-2" role="group" aria-label="Kwart" data-kwarten>
+                <button type="button" class="btn btn-kwart" data-kwart="1">Q1</button>
+                <button type="button" class="btn btn-kwart" data-kwart="2">Q2</button>
+                <button type="button" class="btn btn-kwart" data-kwart="3">Q3</button>
+                <button type="button" class="btn btn-kwart" data-kwart="4">Q4</button>
+                <button type="button" class="btn btn-kwart" data-kwart="5" title="Verlenging">V</button>
+            </div>
+            <div class="text-center small mt-2" data-sync aria-live="polite"></div>
+        </div>
+    </div>
+
+    {% if met_film %}
+    <!-- Wedstrijdfilm: bijhouden terwijl je de video kijkt -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3 live-film" data-film>
+        <div class="card-header bg-dark text-white px-3 py-2 d-flex justify-content-between align-items-center">
+            <span class="small fw-bold"><i class="bi bi-camera-video me-1"></i>{{ bijhouden_film.titel }}</span>
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3" data-film-toggle>Verberg video</button>
+        </div>
+        <div class="ratio ratio-16x9 bg-dark" data-film-video>
+            <iframe src="{{ bijhouden_film.embed_url }}" title="{{ bijhouden_film.titel }}"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+        </div>
+    </div>
+    </div>{# /live-boven #}
+    {% endif %}
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <!-- 1. Speelster -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body p-3">
+                    <div class="stap-kop">1 · Kies speelster</div>
+                    <div class="spelers-grid" data-spelers></div>
+                </div>
+            </div>
+
+            <!-- 2. Actie -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body p-3">
+                    <div class="stap-kop">2 · Wat gebeurde er? <span class="fw-normal text-muted" data-gekozen-naam></span></div>
+                    <div class="acties-grid mb-2">
+                        <button type="button" class="btn-actie raak" data-soort="2r">2 <i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn-actie raak" data-soort="3r">3 <i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn-actie raak" data-soort="fr">VW <i class="bi bi-check-lg"></i></button>
+                        <button type="button" class="btn-actie mis" data-soort="2m">2 <i class="bi bi-x-lg"></i></button>
+                        <button type="button" class="btn-actie mis" data-soort="3m">3 <i class="bi bi-x-lg"></i></button>
+                        <button type="button" class="btn-actie mis" data-soort="fm">VW <i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="acties-grid acties-klein">
+                        <button type="button" class="btn-actie" data-soort="or">Reb<small>aanval</small></button>
+                        <button type="button" class="btn-actie" data-soort="dr">Reb<small>verdediging</small></button>
+                        <button type="button" class="btn-actie" data-soort="as">Assist</button>
+                        <button type="button" class="btn-actie" data-soort="st">Steal</button>
+                        <button type="button" class="btn-actie" data-soort="bl">Block</button>
+                        <button type="button" class="btn-actie" data-soort="to">Bal&shy;verlies</button>
+                        <button type="button" class="btn-actie fout" data-soort="pf">Fout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tegenstander -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body p-3">
+                    <div class="stap-kop">Punten {{ bijhouden.tegenstander }}</div>
+                    <div class="acties-grid acties-tegen">
+                        <button type="button" class="btn-actie tegen" data-soort="t1">+1</button>
+                        <button type="button" class="btn-actie tegen" data-soort="t2">+2</button>
+                        <button type="button" class="btn-actie tegen" data-soort="t3">+3</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <!-- Laatste acties -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold fs-6">LAATSTE ACTIES</h5>
+                    <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3" data-ongedaan>
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Ongedaan maken
+                    </button>
+                </div>
+                <ul class="list-group list-group-flush small" data-log></ul>
+            </div>
+
+            <!-- Tussenstand per speelster -->
+            <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+                <div class="card-header bg-dark text-white p-3"><h5 class="mb-0 fw-bold fs-6">TUSSENSTAND</h5></div>
+                <div class="table-responsive">
+                    <table class="table table-sm stats-tabel mb-0">
+                        <thead><tr>
+                            <th class="naam">Speelster</th><th title="Punten">PTS</th><th title="Velddoelpunten raak/poging">FG</th>
+                            <th title="3-punters raak/poging">3P</th><th title="Vrije worpen raak/poging">VW</th><th title="Rebounds">REB</th>
+                            <th title="Assists">AST</th><th title="Steals">STL</th><th title="Blocks">BLK</th><th title="Balverlies">TO</th><th title="Fouten">PF</th>
+                        </tr></thead>
+                        <tbody data-tussenstand></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+{{ bijhouden_data|json_script:"stats-live-data" }}
+
+{% else %}
+{# ======================================================================= #}
+{# OVERZICHT                                                               #}
+{# ======================================================================= #}
+<div class="text-white hero-compact px-4 px-lg-5 mb-4">
+    <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            <span class="text-uppercase text-slam fw-bold small tracking-wider">TEAM VSE-2 STATS</span>
+            <h1 class="display-6 fw-bold text-white mb-0">STATISTIEKEN</h1>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 px-lg-5 pb-5" data-stats-page="{{ page.id }}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-arrow-left me-1"></i> Terug naar homepage
+        </a>
+        {% if kan_stats_bijhouden %}
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-sm btn-slam rounded-pill px-3 fw-semibold" onclick="openWedstrijdFormulier(null)">
+                    <i class="bi bi-plus-lg me-1"></i> Nieuwe wedstrijd
+                </button>
+                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none px-2" onclick="coachUitloggen()">
+                    <i class="bi bi-box-arrow-right me-1"></i>Uitloggen ({{ request.user.get_username }})
+                </button>
+            </div>
+        {% else %}
+            {% include "home/includes/login_modal.html" with soort="stats" %}
+        {% endif %}
+    </div>
+
+    {% if page.intro %}<div class="text-muted mb-4">{{ page.intro|richtext }}</div>{% endif %}
+
+    <!-- FILTERS -->
+    <form method="get" class="card border-0 shadow-sm rounded-4 mb-4" data-filters>
+        <div class="card-body p-3 px-4">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold mb-1" for="f-wedstrijd">Wedstrijd</label>
+                    <select id="f-wedstrijd" name="wedstrijd" class="form-select form-select-sm">
+                        <option value="">Alle wedstrijden</option>
+                        {% for w in wedstrijden %}<option value="{{ w.id }}" {% if f_wedstrijd and f_wedstrijd.id == w.id %}selected{% endif %}>{{ w.datum|date:"j M" }} · {% if w.thuis %}vs{% else %}@{% endif %} {{ w.tegenstander }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label small fw-bold mb-1" for="f-speler">Speelster</label>
+                    <select id="f-speler" name="speler" class="form-select form-select-sm">
+                        <option value="">Heel team</option>
+                        {% for s in spelers_filter %}<option value="{{ s.id }}" {% if f_speler and f_speler.id == s.id %}selected{% endif %}>{{ s.naam }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small fw-bold mb-1" for="f-kwart">Kwart</label>
+                    <select id="f-kwart" name="kwart" class="form-select form-select-sm">
+                        <option value="">Hele wedstrijd</option>
+                        {% for k, label in kwarten %}<option value="{{ k }}" {% if f_kwart == k %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1" for="f-weergave">Weergave</label>
+                    <select id="f-weergave" name="weergave" class="form-select form-select-sm" {% if f_wedstrijd %}disabled title="Kies 'Alle wedstrijden' voor gemiddelden"{% endif %}>
+                        <option value="">Totaal</option>
+                        <option value="gem" {% if gemiddeld %}selected{% endif %}>Gemiddeld per wedstrijd</option>
+                    </select>
+                </div>
+            </div>
+            <noscript><button class="btn btn-sm btn-slam mt-2">Toon</button></noscript>
+            {% if f_wedstrijd or f_speler or f_kwart or gemiddeld %}
+                <a href="{{ page.url }}" class="small text-muted d-inline-block mt-2"><i class="bi bi-x-circle me-1"></i>Filters wissen</a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if scorebord %}
+    <!-- SCOREBORD VAN DE GEKOZEN WEDSTRIJD -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="bva-verloop text-white p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="small text-uppercase fw-bold opacity-75">{{ f_wedstrijd.datum|date:"l j F Y" }} · {% if f_wedstrijd.thuis %}thuis{% else %}uit{% endif %}</div>
+                    <div class="display-6 fw-bold lh-1 mt-1">VSE-2 {{ scorebord.wij }} – {{ scorebord.zij }} {{ f_wedstrijd.tegenstander }}</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if f_film %}
+                        <a href="{{ f_film.archief_url }}" class="btn btn-outline-light rounded-pill px-4 fw-bold"><i class="bi bi-camera-video me-1"></i>Film bekijken</a>
+                    {% endif %}
+                    {% if kan_stats_bijhouden %}
+                        <a href="?bijhouden={{ f_wedstrijd.id }}" class="btn btn-light rounded-pill px-4 fw-bold"><i class="bi bi-pencil-square me-1"></i>Bijhouden</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                {% for q in scorebord.kwarten %}
+                    <span class="badge bg-light text-dark px-3 py-2">{{ q.label }}: {{ q.wij }}–{{ q.zij }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-xl-9">
+        {% if heeft_stats %}
+            <!-- BOX SCORE -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0 fw-bold fs-6">{% if f_speler %}{{ f_speler.naam|upper }}{% else %}SPEELSTERS{% endif %}</h5>
+                    <span class="badge" style="background-color: #58A6C2;">
+                        {% if f_wedstrijd %}{{ f_wedstrijd.tegenstander }}{% else %}{{ team_rij.wedstrijden }} wedstrijd{{ team_rij.wedstrijden|pluralize:"en" }}{% endif %}
+                        · {% if f_kwart %}{{ f_kwart_label }}{% else %}hele wedstrijd{% endif %}
+                        {% if gemiddeld %}· gemiddeld{% endif %}
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover stats-tabel mb-0">
+                        <thead><tr>
+                            <th class="naam">Speelster</th>
+                            {% if not f_wedstrijd %}<th title="Aantal wedstrijden">WED</th>{% endif %}
+                            {% for kop, uitleg, s, t in kolommen %}<th title="{{ uitleg }}">{{ kop }}</th>{% endfor %}
+                        </tr></thead>
+                        <tbody>
+                            {% for rij in box %}
+                                <tr>
+                                    <td class="naam"><a href="?{% if f_wedstrijd %}wedstrijd={{ f_wedstrijd.id }}&{% endif %}{% if f_kwart %}kwart={{ f_kwart }}&{% endif %}{% if gemiddeld %}weergave=gem&{% endif %}speler={{ rij.regel.speler.id }}">{% if rij.regel.speler.rugnummer is not None %}<span class="text-muted">#{{ rij.regel.speler.rugnummer }}</span> {% endif %}{{ rij.regel.label }}</a></td>
+                                    {% if not f_wedstrijd %}<td>{{ rij.wedstrijden }}</td>{% endif %}
+                                    {% for c in rij.cellen %}<td {% if forloop.first %}class="fw-bold"{% endif %}>{{ c }}</td>{% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="team-rij">
+                                <td class="naam">Team totaal</td>
+                                {% if not f_wedstrijd %}<td>{{ team_rij.wedstrijden }}</td>{% endif %}
+                                {% for c in team_rij.cellen %}<td>{{ c }}</td>{% endfor %}
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-footer bg-white small text-muted">
+                    Raak/poging, bijv. 4/9 = 4 van de 9 raak. VW = vrije worpen. Ga met je muis over een kolomkop voor uitleg.
+                </div>
+            </div>
+
+            {% if per_kwart %}
+            <!-- PER KWART -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0 fw-bold fs-6">PER KWART · {% if f_speler %}{{ f_speler.naam|upper }}{% else %}TEAM{% endif %}{% if gemiddeld %} · GEMIDDELD{% endif %}</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover stats-tabel mb-0">
+                        <thead><tr>
+                            <th class="naam">Kwart</th><th title="Score in dit kwart (VSE-2 – tegenstander), opgeteld">Score</th>
+                            {% for kop, uitleg, s, t in kolommen %}<th title="{{ uitleg }}">{{ kop }}</th>{% endfor %}
+                        </tr></thead>
+                        <tbody>
+                            {% for q in per_kwart %}
+                                <tr>
+                                    <td class="naam"><a href="?{% if f_wedstrijd %}wedstrijd={{ f_wedstrijd.id }}&{% endif %}{% if f_speler %}speler={{ f_speler.id }}&{% endif %}{% if gemiddeld %}weergave=gem&{% endif %}kwart={{ q.kwart }}">{{ q.label }}</a></td>
+                                    <td class="text-nowrap">{{ q.wij }}–{{ q.zij }}</td>
+                                    {% for c in q.cellen %}<td {% if forloop.first %}class="fw-bold"{% endif %}>{{ c }}</td>{% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if per_wedstrijd %}
+            <!-- PER WEDSTRIJD -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white p-3">
+                    <h5 class="mb-0 fw-bold fs-6">PER WEDSTRIJD · {% if f_speler %}{{ f_speler.naam|upper }}{% else %}TEAM{% endif %}{% if f_kwart %} · {{ f_kwart_label|upper }}{% endif %}</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover stats-tabel mb-0">
+                        <thead><tr>
+                            <th class="naam">Wedstrijd</th><th title="Uitslag (VSE-2 – tegenstander){% if f_kwart %} in dit kwart{% endif %}">Score</th>
+                            {% for kop, uitleg, s, t in kolommen %}<th title="{{ uitleg }}">{{ kop }}</th>{% endfor %}
+                        </tr></thead>
+                        <tbody>
+                            {% for w in per_wedstrijd %}
+                                <tr>
+                                    <td class="naam"><a href="?wedstrijd={{ w.wedstrijd.id }}{% if f_speler %}&speler={{ f_speler.id }}{% endif %}{% if f_kwart %}&kwart={{ f_kwart }}{% endif %}"><span class="text-muted">{{ w.wedstrijd.datum|date:"j M" }}</span> {% if w.wedstrijd.thuis %}vs{% else %}@{% endif %} {{ w.wedstrijd.tegenstander }}</a></td>
+                                    <td class="text-nowrap fw-semibold {% if w.wij > w.zij %}text-success{% elif w.wij < w.zij %}text-danger{% endif %}">{{ w.wij }}–{{ w.zij }}</td>
+                                    {% for c in w.cellen %}<td {% if forloop.first %}class="fw-bold"{% endif %}>{{ c }}</td>{% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted mb-4">
+                <div class="fs-1 mb-2">📊</div>
+                <div class="fw-bold text-dark">Nog geen statistieken{% if f_wedstrijd or f_speler or f_kwart %} voor deze keuze{% endif %}</div>
+                {% if kan_stats_bijhouden %}
+                    <div class="small mt-1">{% if f_wedstrijd %}Klik op <strong>Bijhouden</strong> om te beginnen.{% else %}Maak een <strong>nieuwe wedstrijd</strong> aan en klik op <strong>Bijhouden</strong>.{% endif %}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+        </div>
+
+        <!-- WEDSTRIJDEN -->
+        <div class="col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white p-3"><h5 class="mb-0 fw-bold fs-6">WEDSTRIJDEN</h5></div>
+                <ul class="list-group list-group-flush">
+                    {% for item in wedstrijden_lijst %}{% with w=item.wedstrijd %}
+                        <li class="list-group-item px-3 py-2 {% if f_wedstrijd and f_wedstrijd.id == w.id %}actief{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <a href="?wedstrijd={{ w.id }}" class="text-decoration-none text-dark flex-fill">
+                                    <div class="small text-muted">{{ w.datum|date:"D j M Y" }} · {% if w.thuis %}thuis{% else %}uit{% endif %}</div>
+                                    <div class="fw-semibold">{{ w.tegenstander }}{% if item.film %} <i class="bi bi-camera-video text-slam" title="Gekoppeld aan de wedstrijdfilm"></i>{% endif %}</div>
+                                </a>
+                                {% if item.heeft_acties %}<span class="fw-bold text-nowrap {% if item.wij > item.zij %}text-success{% elif item.wij < item.zij %}text-danger{% endif %}">{{ item.wij }}–{{ item.zij }}</span>{% endif %}
+                            </div>
+                            {% if kan_stats_bijhouden %}
+                                <div class="d-flex gap-3 mt-1 small">
+                                    <a href="?bijhouden={{ w.id }}" class="fw-semibold text-slam text-decoration-none"><i class="bi bi-pencil-square me-1"></i>Bijhouden</a>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-muted text-decoration-none" onclick="openWedstrijdFormulier('{{ w.id }}')"><i class="bi bi-gear me-1"></i>Wijzig</button>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-muted text-decoration-none" data-id="{{ w.id }}" data-naam="{{ w.tegenstander }}" onclick="verwijderWedstrijd(this)"><i class="bi bi-trash me-1"></i>Verwijder</button>
+                                </div>
+                            {% endif %}
+                        </li>
+                    {% endwith %}{% empty %}
+                        <li class="list-group-item p-3 small text-muted">Nog geen wedstrijden.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if kan_stats_bijhouden %}
+<!-- MODAL: WEDSTRIJD AANMAKEN / WIJZIGEN -->
+<div class="modal fade" id="wedstrijdModal" tabindex="-1" aria-labelledby="wedstrijdTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 rounded-4" onsubmit="event.preventDefault(); slaWedstrijdOp(this);">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="wedstrijdTitel"><i class="bi bi-calendar-event me-2"></i><span class="form-titel">NIEUWE WEDSTRIJD</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none wedstrijd-fout py-2 small" role="alert"></div>
+                {% if film_suggesties %}
+                    <div class="mb-3 suggesties">
+                        <div class="form-label small fw-bold"><i class="bi bi-camera-video me-1"></i>Uit de wedstrijdfilms</div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for f in film_suggesties %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-start" data-film="{{ f.block_id }}" data-datum="{{ f.datum }}" data-tegenstander="{{ f.tegenstander }}" data-thuis="{{ f.thuis|yesno:'1,0' }}" onclick="kiesSuggestie(this)">
+                                    <span class="text-muted">{{ f.datum_str }}</span> · {{ f.titel }}{% if f.uitslag %} <span class="text-muted">({{ f.uitslag }})</span>{% endif %}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% if ical_suggesties %}
+                    <div class="mb-3 suggesties">
+                        <div class="form-label small fw-bold">Uit het programma</div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for g in ical_suggesties %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary text-start" data-datum="{{ g.datum }}" data-tegenstander="{{ g.tegenstander }}" data-thuis="{{ g.thuis|yesno:'1,0' }}" onclick="kiesSuggestie(this)">
+                                    <span class="text-muted">{{ g.datum_obj|date:"j F Y" }}</span> · {{ g.titel }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                        <div class="small text-muted mt-2">Of vul hieronder zelf in:</div>
+                    </div>
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="w-tegenstander">Tegenstander *</label>
+                        <input id="w-tegenstander" name="tegenstander" class="form-control" placeholder="Bijv. BC Leiden" required maxlength="100">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold" for="w-datum">Datum *</label>
+                        <input id="w-datum" name="datum" type="date" class="form-control" required value="{% now 'Y-m-d' %}">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold" for="w-thuis">Thuis / uit</label>
+                        <select id="w-thuis" name="thuis" class="form-select">
+                            <option value="1">Thuis</option>
+                            <option value="0">Uit</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="w-film"><i class="bi bi-camera-video me-1"></i>Wedstrijdfilm</label>
+                        <select id="w-film" name="film" class="form-select">
+                            <option value="">Geen film</option>
+                            {% for f in films %}<option value="{{ f.block_id }}">{{ f.datum_str }} · {{ f.titel }}</option>{% endfor %}
+                        </select>
+                        <div class="form-text">Met een film zie je de video tijdens het bijhouden, handig als je de stats achteraf invult.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold form-opslaan">Opslaan en bijhouden</button>
+            </div>
+        </form>
+    </div>
+</div>
+{{ wedstrijd_data|json_script:"wedstrijd-data" }}
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block reacties_js %}
+    <script src="{% static 'js/film_toevoegen.js' %}"></script>
+    <script src="{% static 'js/stats.js' %}"></script>
+{% endblock %}

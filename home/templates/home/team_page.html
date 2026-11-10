@@ -1,0 +1,351 @@
+{% extends "home/base.html" %}
+{% load wagtailcore_tags wagtailimages_tags static %}
+
+{% block title %}Ons team | BVA VSE-2{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/wedstrijd_archief.css' %}">
+    <style>
+        .bva-verloop { background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%); }
+        .speler-kaart { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .speler-kaart:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(17, 34, 51, 0.15) !important; }
+        .speler-foto {
+            width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block;
+        }
+        .speler-initialen {
+            width: 100%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+            color: #ffffff; font-size: 2.6rem; font-weight: 800; letter-spacing: 0.04em;
+        }
+        .rugnummer {
+            position: absolute; top: 10px; left: 10px; background: rgba(17, 34, 51, 0.85); color: #ffffff;
+            font-weight: 800; border-radius: 10px; padding: 2px 10px; font-size: 1.1rem;
+        }
+        .reeks-badge {
+            position: absolute; top: 10px; right: 10px; background: #ffffff; color: #112233;
+            font-weight: 700; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .mini-balk { height: 6px; background-color: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .mini-balk > div { height: 100%; border-radius: 999px; }
+        .staf-foto { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+        .staf-initialen {
+            width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #ffffff; font-weight: 800; font-size: 1.3rem;
+        }
+        .teamfoto { max-height: 420px; object-fit: cover; width: 100%; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="text-white hero-compact px-4 px-lg-5 mb-4">
+    <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            <span class="text-uppercase text-slam fw-bold small tracking-wider">BASKETBALVERENIGING AMSTERDAM</span>
+            <h1 class="display-6 fw-bold text-white mb-0">ONS TEAM</h1>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-dark border border-secondary text-light px-3 py-2">{{ spelers_kaarten|length }} speelsters · #SAMEN</span>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 px-lg-5 pb-5">
+    <div class="row" style="margin-bottom: 30px;">
+        <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+                <i class="bi bi-arrow-left me-1"></i> Terug naar homepage
+            </a>
+            {% if kan_spelers_beheren or kan_pagina_bewerken %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% if kan_spelers_beheren %}
+                        <button type="button" class="btn btn-sm btn-slam rounded-pill px-3 fw-semibold" onclick="openSpeler(null)">
+                            <i class="bi bi-plus-lg me-1"></i>Speelster toevoegen
+                        </button>
+                    {% endif %}
+                    {% if kan_pagina_bewerken %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="openStaf(null)">
+                            <i class="bi bi-person-badge me-1"></i>Staflid toevoegen
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="openTeamInfo()">
+                            <i class="bi bi-image me-1"></i>Teamfoto &amp; tekst
+                        </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none px-2" onclick="coachUitloggen()">
+                        <i class="bi bi-box-arrow-right me-1"></i>Uitloggen ({{ request.user.get_username }})
+                    </button>
+                </div>
+            {% else %}
+                {% include "home/includes/login_modal.html" with soort="team" %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if page.teamfoto %}
+        {% image page.teamfoto width-1600 as foto %}
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+            <img src="{{ foto.url }}" alt="Teamfoto BVA VSE-2" class="teamfoto">
+        </div>
+    {% endif %}
+
+    {% if page.intro %}
+        <div class="text-muted mb-4" style="max-width: 760px;">{{ page.intro|richtext }}</div>
+    {% endif %}
+
+    <!-- SPEELSTERS -->
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <div>
+            <span class="text-uppercase text-muted small fw-bold">Selectie</span>
+            <h3 class="fw-bold text-dark mb-0">De speelsters</h3>
+        </div>
+        <a href="{{ training_url }}" class="small text-slam fw-semibold text-decoration-none">🔥 = weken op rij alle trainingsopdrachten gedaan →</a>
+    </div>
+
+    <div class="row g-3 g-md-4 mb-5">
+        {% for k in spelers_kaarten %}
+            {% with s=k.speler %}
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100 speler-kaart">
+                    <div class="position-relative">
+                        {% if s.foto %}
+                            {% image s.foto fill-400x400 as pf %}
+                            <img src="{{ pf.url }}" alt="{{ s.naam }}" class="speler-foto" loading="lazy">
+                        {% else %}
+                            <div class="speler-initialen bva-verloop" aria-hidden="true">{{ k.initialen }}</div>
+                        {% endif %}
+                        {% if s.rugnummer is not None %}<span class="rugnummer">#{{ s.rugnummer }}</span>{% endif %}
+                        {% if k.reeks >= 2 %}<span class="reeks-badge" title="{{ k.reeks }} weken op rij alles gedaan">🔥 {{ k.reeks }}</span>{% endif %}
+                    </div>
+                    <div class="card-body p-3">
+                        {% if kan_spelers_beheren %}
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                {% if not s.heeft_pincode %}<span class="badge bg-warning text-dark" title="Kan nog niet afvinken bij training">geen pincode</span>{% else %}<span></span>{% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2" onclick="openSpeler('{{ s.id }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        {% endif %}
+                        <div class="fw-bold text-dark">{{ s.naam }}</div>
+                        <div class="small text-muted">{% if s.positie %}{{ s.get_positie_display }}{% else %}&nbsp;{% endif %}</div>
+                        {% if k.training_pct is not None %}
+                            <div class="d-flex justify-content-between small text-muted mt-2 mb-1">
+                                <span>Training deze week</span><span class="fw-semibold">{{ k.training_pct }}%</span>
+                            </div>
+                            <div class="mini-balk"><div class="bva-verloop" style="width: {{ k.training_pct }}%;"></div></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% empty %}
+            <div class="col-12 text-muted">Nog geen speelsters.{% if kan_spelers_beheren %} Klik op "Speelster toevoegen".{% endif %}</div>
+        {% endfor %}
+    </div>
+
+    {% if kan_spelers_beheren and inactieve_spelers %}
+        <div class="mb-5">
+            <span class="text-uppercase text-muted small fw-bold">Alleen zichtbaar voor coach en trainers</span>
+            <h5 class="fw-bold text-dark">Niet actief</h5>
+            <div class="d-flex flex-wrap gap-2">
+                {% for s in inactieve_spelers %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openSpeler('{{ s.id }}')">
+                        {{ s.naam }} <i class="bi bi-pencil ms-1"></i>
+                    </button>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- STAF -->
+    {% if page.staf or kan_pagina_bewerken %}
+        <div class="mb-3">
+            <span class="text-uppercase text-muted small fw-bold">Begeleiding</span>
+            <h3 class="fw-bold text-dark mb-0">Staf</h3>
+        </div>
+        <div class="row g-3">
+            {% for blok in page.staf %}
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 d-flex flex-row align-items-center gap-3">
+                        {% if blok.value.foto %}
+                            {% image blok.value.foto fill-128x128 as sf %}
+                            <img src="{{ sf.url }}" alt="{{ blok.value.naam }}" class="staf-foto">
+                        {% else %}
+                            <div class="staf-initialen bva-verloop" aria-hidden="true">{{ blok.value.naam|slice:":1"|upper }}</div>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">{{ blok.value.naam }}</div>
+                            <div class="small text-slam fw-semibold">{{ blok.value.rol }}</div>
+                        </div>
+                        {% if kan_pagina_bewerken %}
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2" title="Bewerken" onclick="openStaf('{{ blok.id }}')"><i class="bi bi-pencil"></i></button>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill py-0 px-2" title="Verwijderen"
+                                        data-naam="{{ blok.value.naam }}" onclick="stafVerwijderen('{{ blok.id }}', this.dataset.naam, {{ page.id }})"><i class="bi bi-trash"></i></button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-muted small">Nog geen staf. Klik op "Staflid toevoegen".</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+{% if kan_spelers_beheren or kan_pagina_bewerken %}
+<!-- MODAL: SPEELSTER -->
+{% if kan_spelers_beheren %}
+{{ speler_data|json_script:"speler-data" }}
+<div class="modal fade" id="spelerModal" tabindex="-1" aria-labelledby="spelerTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 rounded-4" data-endpoint="/api/team/speler-opslaan/" onsubmit="event.preventDefault(); teamOpslaan(this);">
+            <input type="hidden" name="id" value="">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="spelerTitel"><i class="bi bi-person me-2"></i><span class="form-titel">NIEUWE SPEELSTER</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none team-fout py-2 small" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-8">
+                        <label class="form-label small fw-bold" for="sp-naam">Naam *</label>
+                        <input id="sp-naam" name="naam" class="form-control" required maxlength="100">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small fw-bold" for="sp-nummer">Rugnummer</label>
+                        <input id="sp-nummer" name="rugnummer" type="number" min="0" max="99" class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="sp-positie">Positie</label>
+                        <select id="sp-positie" name="positie" class="form-select">
+                            <option value="">Geen / onbekend</option>
+                            {% for waarde, label in posities %}<option value="{{ waarde }}">{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Foto</label>
+                        <div class="foto-huidig d-none d-flex align-items-center gap-2 mb-2">
+                            <img src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:12px;">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="foto_verwijderen" value="1" id="sp-weg">
+                                <label class="form-check-label small" for="sp-weg">Huidige foto verwijderen</label>
+                            </div>
+                        </div>
+                        <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="form-control">
+                        <div class="form-text">JPG, PNG of WebP, max. 10 MB. Leeg laten = huidige foto blijft.</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="sp-pin">Pincode (4 cijfers, om af te vinken bij training)</label>
+                        <div class="input-group">
+                            <input id="sp-pin" name="pincode" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" class="form-control" autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" onclick="genereerPin(this)" title="Willekeurige pincode maken">🎲 Maak pincode</button>
+                        </div>
+                        <div class="form-text pin-hint"></div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="actief" id="sp-actief" checked>
+                            <label class="form-check-label small fw-bold" for="sp-actief">Actief in de selectie</label>
+                        </div>
+                        <div class="form-text">Uit = tijdelijk niet in de selectie (blessure, stop). Ze blijft bewaard en telt niet mee.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Toevoegen</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if kan_pagina_bewerken %}
+{{ staf_data|json_script:"staf-data" }}
+<!-- MODAL: STAFLID -->
+<div class="modal fade" id="stafModal" tabindex="-1" aria-labelledby="stafTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content border-0 rounded-4" data-endpoint="/api/team/staf-opslaan/" onsubmit="event.preventDefault(); teamOpslaan(this);">
+            <input type="hidden" name="page_id" value="{{ page.id }}">
+            <input type="hidden" name="block_id" value="">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="stafTitel"><i class="bi bi-person-badge me-2"></i><span class="form-titel">NIEUW STAFLID</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none team-fout py-2 small" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold" for="st-naam">Naam *</label>
+                        <input id="st-naam" name="naam" class="form-control" required maxlength="100">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold" for="st-rol">Rol *</label>
+                        <input id="st-rol" name="rol" class="form-control" required maxlength="100" placeholder="Bijv. Coach, Trainer" list="rol-opties">
+                        <datalist id="rol-opties"><option value="Hoofdcoach"><option value="Coach"><option value="Assistent-coach"><option value="Trainer"><option value="Teammanager"></datalist>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Foto</label>
+                        <div class="foto-huidig d-none d-flex align-items-center gap-2 mb-2">
+                            <img src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:12px;">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="foto_verwijderen" value="1" id="st-weg">
+                                <label class="form-check-label small" for="st-weg">Huidige foto verwijderen</label>
+                            </div>
+                        </div>
+                        <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" class="form-control">
+                        <div class="form-text">JPG, PNG of WebP, max. 10 MB. Leeg laten = huidige foto blijft.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Toevoegen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: TEAMFOTO EN TEKST -->
+<div class="modal fade" id="teamInfoModal" tabindex="-1" aria-labelledby="teamInfoTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form class="modal-content border-0 rounded-4" data-endpoint="/api/team/info-opslaan/" onsubmit="event.preventDefault(); teamOpslaan(this);">
+            <input type="hidden" name="page_id" value="{{ page.id }}">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="teamInfoTitel"><i class="bi bi-image me-2"></i>TEAMFOTO &amp; TEKST</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none team-fout py-2 small" role="alert"></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-bold" for="ti-intro">Tekst over het team</label>
+                        <textarea id="ti-intro" name="intro" rows="5" maxlength="3000" class="form-control" placeholder="Wie zijn wij? Een lege regel begint een nieuwe alinea.">{{ intro_tekst }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-bold">Teamfoto</label>
+                        {% if teamfoto_url %}
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <img src="{{ teamfoto_url }}" alt="Huidige teamfoto" style="width:120px;height:68px;object-fit:cover;border-radius:10px;">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" name="teamfoto_verwijderen" value="1" id="ti-weg">
+                                <label class="form-check-label small" for="ti-weg">Teamfoto verwijderen</label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="teamfoto" accept="image/jpeg,image/png,image/webp" class="form-control">
+                        <div class="form-text">JPG, PNG of WebP, max. 10 MB. Leeg laten = huidige foto blijft.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+<script src="{% static 'js/team.js' %}"></script>
+{% endif %}
+<script src="{% static 'js/film_toevoegen.js' %}"></script>
+{% endblock %}

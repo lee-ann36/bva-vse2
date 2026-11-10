@@ -1,0 +1,269 @@
+{% extends "home/base.html" %}
+{% load wagtailcore_tags static %}
+
+{% block title %}Training | BVA VSE-2{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/wedstrijd_archief.css' %}">
+    <style>
+        .bva-verloop { background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%); }
+        .voortgang { height: 10px; background-color: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .voortgang-groot { height: 16px; }
+        .voortgang > div { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+        .week-nav .btn { border-color: #d1d5db; }
+        .opdracht-card.gedaan { border-left: 5px solid #58A6C2 !important; }
+        .btn-afvinken {
+            border: 2px solid #58A6C2; color: #112233; font-weight: 700; background: #ffffff;
+            border-radius: 50px; padding: 8px 20px;
+        }
+        .btn-afvinken:hover { background-color: #eef7fa; }
+        .btn-afvinken.is-gedaan { color: #ffffff; border-color: transparent; }
+        .speler-chip {
+            display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600;
+            background-color: #eef7fa; color: #112233; border-radius: 999px; padding: 3px 10px;
+        }
+        .ranglijst-rij + .ranglijst-rij { border-top: 1px solid #f0f0f0; }
+        .ranglijst-rij.ik { background-color: #f3fafc; }
+        .categorie-badge { background-color: #112233; }
+        .sticky-lg { position: sticky; top: 20px; }
+        @media (max-width: 991px) { .sticky-lg { position: static; } }
+    </style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<div class="text-white hero-compact px-4 px-lg-5 mb-4">
+    <div class="container-fluid d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+        <div>
+            <span class="text-uppercase text-slam fw-bold small tracking-wider">TEAM VSE-2 TRAINING</span>
+            <h1 class="display-6 fw-bold text-white mb-0">TRAININGSOPDRACHTEN</h1>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <span class="badge bg-dark border border-secondary text-light px-3 py-2">Samen sterker · #SAMEN</span>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 px-lg-5 pb-5" data-training-page="{{ page.id }}" data-week="{{ maandag|date:'Y-m-d' }}">
+
+    <div class="row" style="margin-bottom: 30px;">
+        <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+                <i class="bi bi-arrow-left me-1"></i> Terug naar homepage
+            </a>
+            {% include "home/includes/coach_balk.html" with soort="opdracht" %}
+        </div>
+    </div>
+
+    {% if page.intro %}
+        <div class="text-muted mb-4">{{ page.intro|richtext }}</div>
+    {% endif %}
+
+    <!-- INLOGGEN SPEELSTER -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            {% if ingelogde_speler %}
+                <div><span class="fs-5 me-1">👋</span> Hoi <strong>{{ ingelogde_speler.naam }}</strong>, je vinkt af als jezelf.</div>
+                <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" onclick="wisselSpeler()">
+                    <i class="bi bi-box-arrow-right me-1"></i>Uitloggen
+                </button>
+            {% else %}
+                <div><span class="fs-5 me-1">🏀</span> Log in met je naam en pincode om opdrachten af te vinken.</div>
+                <button type="button" class="btn btn-sm btn-slam rounded-pill px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#spelerKiezenModal">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>Inloggen
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Meldingen aanzetten (wordt door pwa.js ingevuld) -->
+    <div class="mb-4" data-meldingen hidden></div>
+
+    <!-- WEEK NAVIGATIE + TEAMVOORTGANG -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="bva-verloop text-white p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div class="week-nav btn-group btn-group-sm" role="group" aria-label="Kies week">
+                    <a class="btn btn-light" href="?week={{ vorige_week|date:'Y-m-d' }}" aria-label="Vorige week"><i class="bi bi-chevron-left"></i></a>
+                    <span class="btn btn-light disabled fw-bold text-dark">
+                        Week {{ maandag|date:"W" }} · {{ maandag|date:"j M" }} – {{ zondag|date:"j M Y" }}
+                    </span>
+                    <a class="btn btn-light" href="?week={{ volgende_week|date:'Y-m-d' }}" aria-label="Volgende week"><i class="bi bi-chevron-right"></i></a>
+                </div>
+                {% if is_huidige_week %}
+                    <span class="badge bg-light text-dark px-3 py-2">Deze week</span>
+                {% else %}
+                    <a href="?week={{ huidige_week|date:'Y-m-d' }}" class="badge bg-light text-dark px-3 py-2 text-decoration-none">Naar deze week →</a>
+                {% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <div>
+                    <div class="text-uppercase small fw-bold opacity-75">Team voortgang</div>
+                    <div class="display-6 fw-bold lh-1">{{ team_pct }}%</div>
+                </div>
+                <div class="small opacity-75 text-end">{{ aantal_gedaan }} van {{ aantal_totaal }} keer afgevinkt<br>{{ aantal_opdrachten }} opdracht{{ aantal_opdrachten|pluralize:"en" }} · {{ alle_spelers|length }} speelsters</div>
+            </div>
+            <div class="voortgang voortgang-groot" style="background-color: rgba(255,255,255,0.25);">
+                <div style="width: {{ team_pct }}%; background-color: #ffffff;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- OPDRACHTEN -->
+        <div class="col-lg-8">
+            {% for info in opdrachten_info %}
+                {% with o=info.opdracht %}
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 opdracht-card {% if info.ik_gedaan %}gedaan{% endif %}">
+                    <div class="row g-0">
+                        {% if o.embed_url %}
+                        <div class="col-xl-6 bg-dark d-flex align-items-center">
+                            <div class="ratio ratio-16x9 w-100">
+                                <iframe src="{{ o.embed_url }}" title="{{ o.titel }}" loading="lazy"
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen></iframe>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="{% if o.embed_url %}col-xl-6{% else %}col-12{% endif %} p-4 d-flex flex-column">
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge categorie-badge text-white">{{ o.get_categorie_display }}</span>
+                                {% if o.herhalend %}<span class="badge text-white" style="background-color: #58A6C2;">🔁 Elke week</span>{% endif %}
+                                <span class="badge bg-light text-dark border" title="Periode">📅 {{ o.begin|date:"j M" }} – {{ o.eind|date:"j M" }}</span>
+                                {% if info.voor_iedereen %}
+                                    <span class="badge bg-light text-dark border">👥 Iedereen</span>
+                                {% else %}
+                                    <span class="badge text-white bva-verloop" title="Persoonlijke opdracht">👤 {% for s in info.doel_spelers %}{{ s.naam }}{% if not forloop.last %}, {% endif %}{% empty %}niemand actief{% endfor %}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <h4 class="fw-bold text-dark mb-1">{{ o.titel }}</h4>
+                                {% if kan_film_toevoegen %}
+                                  <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm text-muted p-0" title="Opdracht bewerken" onclick="openFormulier('{{ o.id }}')">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm text-muted p-0" title="Opdracht verwijderen"
+                                            data-id="{{ o.id }}" data-herhalend="{{ o.herhalend|yesno:'1,0' }}" data-start="{{ o.begin_week|date:'Y-m-d' }}"
+                                            onclick="verwijderOpdracht(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                  </div>
+                                {% endif %}
+                            </div>
+                            {% if o.hoeveelheid %}<div class="h5 fw-bold text-slam mb-2">{{ o.hoeveelheid }}</div>{% endif %}
+                            {% if not o.herhalend %}
+                                <div class="small fw-semibold mb-2 {% if o.eind < vandaag %}text-danger{% else %}text-dark{% endif %}">
+                                    ⏰ Eén keer doen, deadline {{ o.eind|date:"l j F" }}{% if o.eind < vandaag %} (verlopen){% endif %}
+                                </div>
+                            {% endif %}
+                            {% if o.uitleg %}<div class="text-muted small mb-3">{{ o.uitleg|linebreaksbr }}</div>{% endif %}
+
+                            <div class="mt-auto pt-3 border-top">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    {% if is_toekomst %}
+                                        <span class="small text-muted"><i class="bi bi-clock me-1"></i>Afvinken kan vanaf deze week</span>
+                                    {% elif ingelogde_speler and not info.voor_mij %}
+                                        <span class="small text-muted"><i class="bi bi-person-dash me-1"></i>Niet voor jou</span>
+                                    {% elif ingelogde_speler %}
+                                        <button type="button" class="btn-afvinken {% if info.ik_gedaan %}is-gedaan bva-verloop{% endif %}"
+                                                data-opdracht="{{ o.id }}" data-gedaan="{{ info.ik_gedaan|yesno:'1,0' }}" onclick="afvinken(this)">
+                                            {% if info.ik_gedaan %}<i class="bi bi-check-circle-fill me-1"></i>Gedaan!{% else %}<i class="bi bi-circle me-1"></i>Afvinken{% endif %}
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn-afvinken" data-bs-toggle="modal" data-bs-target="#spelerKiezenModal">
+                                            <i class="bi bi-circle me-1"></i>Afvinken
+                                        </button>
+                                    {% endif %}
+                                    <span class="small text-muted fw-semibold">{{ info.gedaan_door|length }}/{{ info.aantal_doel }} gedaan</span>
+                                </div>
+                                {% if info.gedaan_door %}
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for s in info.gedaan_door %}<span class="speler-chip"><i class="bi bi-check2"></i>{{ s.naam }}</span>{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% empty %}
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
+                    <div class="fs-1 mb-2">🏖️</div>
+                    <div class="fw-bold text-dark">Geen opdrachten in deze week</div>
+                    {% if kan_film_toevoegen %}<div class="small mt-1">Klik op <strong>Opdracht toevoegen</strong> om er een te maken.</div>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- RANGLIJST -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden sticky-lg">
+                <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold fs-6">VOORTGANG SPEELSTERS</h5>
+                    <span class="badge" style="background-color: #58A6C2;">Week {{ maandag|date:"W" }}</span>
+                </div>
+                <div>
+                    {% for info in spelers_info %}
+                        <div class="ranglijst-rij px-3 py-2 {% if ingelogde_speler and info.speler.id == ingelogde_speler.id %}ik{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="fw-semibold text-dark">
+                                    {{ info.speler.naam }}
+                                    {% if info.klaar %}<span title="Alles gedaan deze week">✅</span>{% endif %}
+                                    {% if info.reeks >= 2 %}<span class="badge rounded-pill text-white bva-verloop ms-1" title="{{ info.reeks }} weken op rij alles gedaan">🔥 {{ info.reeks }}</span>{% endif %}
+                                </div>
+                                <small class="text-muted fw-semibold">{% if info.totaal %}{{ info.aantal }}/{{ info.totaal }}{% else %}–{% endif %}</small>
+                            </div>
+                            <div class="voortgang"><div class="bva-verloop" style="width: {{ info.pct }}%;"></div></div>
+                        </div>
+                    {% empty %}
+                        <div class="p-3 text-muted small">Nog geen speelsters. Een coach of trainer kan ze toevoegen op de teampagina.</div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer bg-white small text-muted">
+                    ✅ alles gedaan deze week · 🔥 aantal weken op rij alles gedaan
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: INLOGGEN SPEELSTER -->
+{% if not ingelogde_speler %}
+<div class="modal fade" id="spelerKiezenModal" tabindex="-1" aria-labelledby="spelerKiezenTitel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <form class="modal-content border-0 rounded-4" onsubmit="event.preventDefault(); kiesSpeler(this);">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold fs-6" id="spelerKiezenTitel"><i class="bi bi-box-arrow-in-right me-2"></i>INLOGGEN</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger d-none speler-fout py-2 small" role="alert"></div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold" for="speler-naam">Naam</label>
+                    <select id="speler-naam" name="speler_id" class="form-select" required>
+                        <option value="">Kies je naam…</option>
+                        {% for s in alle_spelers %}<option value="{{ s.id }}">{{ s.naam }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small fw-bold" for="speler-pincode">Pincode</label>
+                    <input id="speler-pincode" name="pincode" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                           class="form-control" placeholder="4 cijfers" autocomplete="off" required>
+                    <div class="form-text">Pincode vergeten? Vraag het aan de trainer of coach.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold">Inloggen</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block reacties_js %}
+    <script src="{% static 'js/training.js' %}"></script>
+{% endblock %}

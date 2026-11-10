@@ -1,0 +1,178 @@
+{% load static %}
+{# Coach-balk: toevoegen/bewerken-formulier of inlogknop. Gebruik: {% include ... with soort="wedstrijd" %}, "play" of "opdracht" #}
+{% if kan_film_toevoegen %}
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-slam rounded-pill px-3 fw-semibold" onclick="openFormulier(null)">
+            <i class="bi bi-plus-lg me-1"></i> {% if soort == "play" %}Play toevoegen{% elif soort == "opdracht" %}Opdracht toevoegen{% else %}Film toevoegen{% endif %}
+        </button>
+        <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none px-2" onclick="coachUitloggen()">
+            <i class="bi bi-box-arrow-right me-1"></i>Uitloggen ({{ request.user.get_username }})
+        </button>
+    </div>
+
+    <div class="modal fade" id="filmToevoegenModal" tabindex="-1" aria-labelledby="filmToevoegenTitel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <form class="modal-content border-0 rounded-4" data-page-id="{{ page.id }}" data-id-veld="{% if soort == 'opdracht' %}id{% else %}block_id{% endif %}" data-param="{% if soort == 'play' %}play{% elif soort == 'opdracht' %}opdracht{% else %}wedstrijd{% endif %}" data-endpoint="{% if soort == 'opdracht' %}/api/training/opdracht-toevoegen/{% else %}/api/film-toevoegen/{% endif %}"
+                  onsubmit="event.preventDefault(); filmToevoegen(this);">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold fs-6" id="filmToevoegenTitel">
+                        <i class="bi bi-camera-video me-2"></i><span class="form-titel" data-bewerk="{% if soort == 'play' %}PLAY BEWERKEN{% elif soort == 'opdracht' %}OPDRACHT BEWERKEN{% else %}WEDSTRIJD BEWERKEN{% endif %}">{% if soort == "play" %}NIEUWE PLAY TOEVOEGEN{% elif soort == "opdracht" %}NIEUWE TRAININGSOPDRACHT{% else %}NIEUWE WEDSTRIJDFILM TOEVOEGEN{% endif %}</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger d-none film-fout" role="alert"></div>
+
+                    {% if soort == "play" %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Naam van de play *</label>
+                                <input name="titel" class="form-control" placeholder="Bijv. Horns Twist" required maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Categorie *</label>
+                                <input name="categorie" class="form-control" placeholder="Bijv. Aanval, Inbounds of Defense" required maxlength="255" list="categorie-opties">
+                                <datalist id="categorie-opties">
+                                    <option value="Aanval"><option value="Inbounds"><option value="Defense"><option value="Fastbreak">
+                                </datalist>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Korte beschrijving *</label>
+                                <input name="korte_beschrijving" class="form-control" placeholder="Waar gaat de play over?" required maxlength="255">
+                            </div>
+
+                            <div class="col-12"><hr class="my-1 opacity-25"><span class="small fw-bold text-muted text-uppercase">YouTube-video's (minstens één)</span></div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold"><i class="bi bi-person me-1"></i>Zonder defense</label>
+                                <input name="video_reallife" type="url" class="form-control" placeholder="https://youtu.be/...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold"><i class="bi bi-shield-shaded me-1"></i>Met defense</label>
+                                <input name="video_defense" type="url" class="form-control" placeholder="https://youtu.be/...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold"><i class="bi bi-easel me-1"></i>Animatie / bordtekening</label>
+                                <input name="video_animatie" type="url" class="form-control" placeholder="https://youtu.be/...">
+                            </div>
+
+                            <div class="col-12"><hr class="my-1 opacity-25"><span class="small fw-bold text-muted text-uppercase">Uitleg (optioneel)</span></div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Opstelling</label>
+                                <input name="opstelling" class="form-control" value="1-2-2" maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Focus</label>
+                                <input name="focus" class="form-control" placeholder="Bijv. Pick & roll" maxlength="255">
+                            </div>
+                            <div class="col-md-6"><input name="stap_1" class="form-control" placeholder="Stap 1" maxlength="255"></div>
+                            <div class="col-md-6"><input name="stap_2" class="form-control" placeholder="Stap 2" maxlength="255"></div>
+                            <div class="col-md-6"><input name="stap_3" class="form-control" placeholder="Stap 3" maxlength="255"></div>
+                            <div class="col-md-6"><input name="stap_4" class="form-control" placeholder="Stap 4" maxlength="255"></div>
+                        </div>
+                    {% elif soort == "opdracht" %}
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">Opdracht *</label>
+                                <input name="titel" class="form-control" placeholder="Bijv. 50 vrije worpen" required maxlength="150">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Hoeveel / hoe lang</label>
+                                <input name="hoeveelheid" class="form-control" placeholder="Bijv. 3×15 of 20 min" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Categorie *</label>
+                                <select name="categorie" class="form-select" required>
+                                    {% for waarde, label in categorieen %}<option value="{{ waarde }}">{{ label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold" for="opdracht-begin">Begindatum *</label>
+                                        <input name="begin" id="opdracht-begin" type="date" class="form-control" required
+                                               value="{% if is_huidige_week %}{% now 'Y-m-d' %}{% else %}{{ maandag|date:'Y-m-d' }}{% endif %}"
+                                               onchange="const e=document.getElementById('opdracht-eind'); e.min=this.value; if (e.value && e.value < this.value) e.value=this.value;">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold" for="opdracht-eind">Einddatum *</label>
+                                        <input name="eind" id="opdracht-eind" type="date" class="form-control" required
+                                               value="{{ zondag|date:'Y-m-d' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Uitleg</label>
+                                <textarea name="uitleg" class="form-control" rows="3" maxlength="3000" placeholder="Hoe doe je de oefening, waar let je op?"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold d-block">Voor wie? *</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="voor_wie" id="voor-iedereen" value="iedereen" checked
+                                           onchange="document.getElementById('voor-spelers-lijst').classList.add('d-none')">
+                                    <label class="form-check-label small" for="voor-iedereen">👥 Iedereen</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="voor_wie" id="voor-bepaald" value="bepaald"
+                                           onchange="document.getElementById('voor-spelers-lijst').classList.remove('d-none')">
+                                    <label class="form-check-label small" for="voor-bepaald">👤 Bepaalde speelster(s)</label>
+                                </div>
+                                <div id="voor-spelers-lijst" class="d-none mt-2 p-2 border rounded-3 bg-light">
+                                    <div class="d-flex flex-wrap gap-3">
+                                        {% for s in alle_spelers %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="spelers" value="{{ s.id }}" id="voor-speler-{{ s.id }}">
+                                                <label class="form-check-label small" for="voor-speler-{{ s.id }}">{{ s.naam }}</label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold"><i class="bi bi-youtube me-1"></i>YouTube-filmpje (optioneel)</label>
+                                <input name="video_url" type="url" class="form-control" placeholder="https://youtu.be/...">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input name="herhalend" class="form-check-input" type="checkbox" id="opdracht-herhalend">
+                                    <label class="form-check-label small fw-bold" for="opdracht-herhalend">🔁 Elke week opnieuw afvinken</label>
+                                </div>
+                                <div class="form-text">
+                                    Aan: in elke week van de periode opnieuw doen (bijv. 50 vrije worpen per week).
+                                    Uit: één keer doen vóór de einddatum (de einddatum is dan de deadline).
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">Wedstrijd *</label>
+                                <input name="titel" class="form-control" placeholder="Bijv. BVA VSE-2 - BC Leiden" required maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Datum *</label>
+                                <input name="datum_str" class="form-control" placeholder="Bijv. 4 oktober 2026" required maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Einduitslag *</label>
+                                <input name="uitslag" class="form-control" placeholder="Bijv. 53 - 36" required maxlength="255">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-bold">YouTube-link van de wedstrijd *</label>
+                                <input name="youtube_url" type="url" class="form-control" placeholder="https://youtu.be/..." required>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>{% if soort == "opdracht" %}Na toevoegen ziet het hele team de opdracht meteen.{% else %}Na toevoegen staat hij meteen online voor het team.{% endif %}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Annuleren</button>
+                    <button type="submit" class="btn btn-slam btn-sm px-4 fw-semibold form-opslaan">Toevoegen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {{ beheer_data|json_script:"beheer-data" }}
+{% else %}
+    {% include "home/includes/login_modal.html" %}
+{% endif %}
+<script src="{% static 'js/film_toevoegen.js' %}"></script>

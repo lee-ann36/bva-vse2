@@ -1,0 +1,1076 @@
+{% load wagtailcore_tags wagtailimages_tags static %}
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="push-sleutel" content="{{ push_publieke_sleutel }}">
+    <title>{{ page.koptekst }}</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#112233">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="VSE-2">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{% static 'img/app/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/app/favicon-32.png' %}">
+    <script src="{% static 'js/pwa.js' %}" defer></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f1ea;
+            color: #112233;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Volledig doorzichtige Navbar bovenaan */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 60px;
+            background-color: transparent;
+            border-bottom: 1px solid rgba(161, 159, 159, 0.6);
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        .nav-logo {
+            font-weight: bold;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            font-size: 14px;
+        }
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.85;
+        }
+        .nav-links a:hover {
+            opacity: 1;
+        }
+        /* "Ons team"-knop: donkere tekst op wit (moet zwaarder wegen dan .nav-links a) */
+        .nav-links a.btn-team {
+            color: #112233;
+            opacity: 1;
+        }
+        .nav-links a.btn-team:hover {
+            background-color: #eef7fa;
+        }
+        .btn-team {
+            background-color: white;
+            color: #112233;
+            padding: 8px 22px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        /* Hero section */
+        .hero {
+            position: relative;
+            background-color: #112233;
+            color: white;
+            min-height: 520px;
+            padding: 160px 60px 80px 60px;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            box-sizing: border-box;
+        }
+
+        .hero-content {
+            max-width: 600px;
+        }
+        .small-tag {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 10px;
+        }
+        .hero h1 {
+            font-size: 56px;
+            margin: 0 0 15px 0;
+            line-height: 1.1;
+            font-weight: 900;
+        }
+        .hero .sub {
+            font-size: 15px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        /* Volgende Wedstrijd Kaart rechts in de banner */
+        .next-game-card {
+            background: white;
+            color: #112233;
+            width: 320px;
+            padding: 25px;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+         
+        }
+        .game-header {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .game-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .game-sub {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .game-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            font-size: 13px;
+        }
+        .time-badge {
+            background-color: #112233;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Turquoise balk */
+        .turquoise-bar {
+            background-color: #58A6C2; 
+            height: 90px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 120px;
+            color: #112233;
+            font-weight: bold;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-item .num {
+            font-size: 22px;
+        }
+        .stat-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-top: 2px;
+            letter-spacing: 1px;
+        }
+
+        /* Sectie: Aankomende Games */
+        .games-section {
+            max-width: 1100px;
+            margin: 60px auto;
+            padding: 0 20px;
+           
+        }
+        .section-subtitle {
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #58A6C2;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 900;
+            color: #112233;
+            margin-top: 0;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+            
+        }
+        .game-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: transparent;
+            border-bottom: 1px solid #dcd6cd;
+            padding: 20px 0;
+        }
+        .game-date-col {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            width: 120px;
+        }
+        .game-day {
+            font-size: 28px;
+            font-weight: bold;
+            color: #112233;
+        }
+        .game-month {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #666;
+        }
+        .game-info-col {
+            flex-grow: 1;
+            padding-left: 20px;
+        }
+        .game-teams-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #112233;
+            margin-bottom: 4px;
+        }
+        .game-location-text {
+            font-size: 13px;
+            color: #666;
+        }
+        .badge-thuis-uit {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 20px;
+        }
+        .badge-thuis {
+            background-color: #58A6C2;
+            color: #112233;
+        }
+        .badge-uit {
+            background-color: #d1c7bc;
+            color: #112233;
+        }
+        .game-time-col {
+            font-size: 22px;
+            font-weight: bold;
+            color: #112233;
+            min-width: 80px;
+            text-align: right;
+        }
+        .all-games-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #58A6C2;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .all-games-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Naadloze integratie in de homepage sfeer */
+.latest-match-seamless {
+    display: flex;
+    flex-wrap: wrap;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.seamless-info {
+    flex: 1 1 350px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #ffffff;
+}
+
+.seamless-banner {
+    flex: 1 1 350px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    border-left: 1px solid #e5e7eb;
+}
+
+/* Ruimte rond de blokken "Laatste Wedstrijd" en "Plays"
+   (de homepage laadt geen Bootstrap, dus de spacing staat hier zelf) */
+.home-block {
+    margin-top: 80px;
+}
+.home-block + .home-block {
+    margin-top: 90px;
+    padding-top: 60px;
+    border-top: 1px solid #e5e7eb;
+}
+.home-block-head {
+    margin-bottom: 24px;
+}
+.home-block-head h3 {
+    margin: 6px 0 0;
+}
+.home-block .d-flex { display: flex; }
+.home-block .align-items-center { align-items: center; }
+.home-block .ms-2 { margin-left: 10px; }
+.home-block .mb-2 { margin-bottom: 10px; }
+.home-block .mb-0 { margin-bottom: 0; }
+.home-block .mt-3 { margin-top: 18px; }
+.home-block .pt-3 { padding-top: 18px; }
+.home-block .border-top { border-top: 1px solid #e5e7eb; }
+.home-block .text-muted { color: #6b7280; }
+.home-block .small { font-size: 0.85rem; }
+.home-block .text-center { text-align: center; }
+.home-block .text-white { color: #ffffff; }
+.home-block .px-2 { padding-left: 8px; padding-right: 8px; }
+.home-block .py-1 { padding-top: 4px; padding-bottom: 4px; }
+.home-block:last-child { margin-bottom: 80px; }
+.home-block .badge {
+    display: inline-block;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.home-block-cta {
+    margin-top: 32px;
+}
+
+/* Game-knop: zelfde BVA-verloop als de Plays-knop, maar rond (pil) */
+.btn-game {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%);
+    background-size: 160% 100%;
+    background-position: 0% 0;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 12px 26px;
+    border-radius: 50px;
+    box-shadow: 0 4px 14px rgba(17, 34, 51, 0.35);
+    transition: background-position 0.35s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-game:hover {
+    background-position: 100% 0;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 34, 51, 0.4);
+}
+
+/* Plays-knop: BVA-kleuren (turquoise -> donkerblauw verloop), hoekig,
+   zodat hij duidelijk anders is dan de effen turquoise game-knop */
+.btn-plays {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%);
+    background-size: 160% 100%;
+    background-position: 0% 0;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    padding: 13px 26px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(17, 34, 51, 0.35);
+    transition: background-position 0.35s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-plays:hover {
+    background-position: 100% 0;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 34, 51, 0.4);
+}
+
+/* Mededelingenbord */
+.mededelingen {
+    max-width: 1100px;
+    margin: 50px auto 0;
+    padding: 0 20px;
+}
+.mededelingen-kop {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.mededelingen-kop h3 {
+    margin: 4px 0 0;
+    font-size: 1.4rem;
+    color: #111827;
+}
+.mededeling-plaatsen {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #58A6C2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.mededeling-plaatsen:hover { text-decoration: underline; }
+.mededeling {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 5px solid #58A6C2;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+}
+.mededeling.belangrijk {
+    border-left-color: transparent;
+    background:
+        linear-gradient(#ffffff, #ffffff) padding-box,
+        linear-gradient(180deg, #58A6C2, #112233) border-box;
+    border-left-width: 5px;
+    box-shadow: 0 6px 18px rgba(17, 34, 51, 0.12);
+}
+.mededeling-titel {
+    font-weight: 700;
+    color: #112233;
+    font-size: 1.05rem;
+}
+.mededeling-tekst {
+    color: #4b5563;
+    font-size: 0.92rem;
+    margin-top: 6px;
+    line-height: 1.5;
+}
+.mededeling-meta {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin-top: 8px;
+}
+
+/* Beheer op de homepage (dialoogvensters) */
+.d-none { display: none !important; }
+.beheer-knopjes { display: flex; gap: 6px; flex-shrink: 0; }
+.beheer-knopjes button, .link-knop {
+    background: none; border: 1px solid #d1d5db; border-radius: 999px; padding: 3px 10px;
+    font-size: 0.75rem; color: #4b5563; cursor: pointer;
+}
+.beheer-knopjes button:hover, .link-knop:hover { border-color: #58A6C2; color: #112233; }
+.beheer-knopjes .rood:hover { border-color: #dc2626; color: #dc2626; }
+.mededeling-rij { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.mededeling.niet-zichtbaar { opacity: 0.55; }
+.mededeling-status { font-size: 0.7rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; }
+.mededelingen-acties { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.mededelingen-acties button.mededeling-plaatsen { background: none; border: 0; cursor: pointer; padding: 0; }
+.inlog-voet { text-align: center; margin: 10px 0 40px; }
+.inlog-voet button { background: none; border: 0; color: #9ca3af; font-size: 0.8rem; cursor: pointer; }
+.inlog-voet button:hover { color: #112233; text-decoration: underline; }
+dialog.bva-dialoog {
+    border: 0; border-radius: 16px; padding: 0; width: min(460px, calc(100vw - 32px));
+    box-shadow: 0 20px 50px rgba(17, 34, 51, 0.35);
+}
+dialog.bva-dialoog::backdrop { background: rgba(11, 23, 42, 0.55); }
+.dialoog-kop {
+    background: #0b172a; color: #ffffff; padding: 14px 20px; font-weight: 700; font-size: 0.95rem;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.dialoog-kop button { background: none; border: 0; color: #ffffff; font-size: 1.3rem; cursor: pointer; line-height: 1; }
+.dialoog-body { padding: 20px; display: grid; gap: 14px; }
+.dialoog-body label { font-size: 0.8rem; font-weight: 700; color: #374151; display: block; margin-bottom: 4px; }
+.dialoog-body input[type=text], .dialoog-body input[type=password], .dialoog-body input[type=date], .dialoog-body textarea {
+    width: 100%; box-sizing: border-box; border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 11px;
+    font: inherit; font-size: 0.92rem;
+}
+.dialoog-body input:focus, .dialoog-body textarea:focus { outline: 2px solid #58A6C2; border-color: #58A6C2; }
+.dialoog-rij { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dialoog-hint { font-size: 0.75rem; color: #6b7280; margin-top: 4px; }
+.dialoog-fout { background: #fef2f2; color: #b91c1c; border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; }
+.dialoog-voet { padding: 14px 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 8px; }
+.knop-licht, .knop-bva {
+    border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+}
+.knop-licht { background: #ffffff; border: 1px solid #d1d5db; color: #374151; }
+.knop-bva { border: 0; color: #ffffff; background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%); }
+.knop-bva:disabled { opacity: 0.6; }
+
+/* Meldingen aanzetten */
+.meldingen-plek { max-width: 1100px; margin: 50px auto 0; padding: 0 20px; box-sizing: border-box; }
+
+/* Installeer als app */
+.installeer-blok {
+    max-width: 1100px;
+    margin: 60px auto 80px;
+    padding: 0 20px;
+}
+.installeer-kaart {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 20px 24px;
+    border-radius: 16px;
+    color: #ffffff;
+    background: linear-gradient(120deg, #58A6C2 0%, #2f6f8c 45%, #112233 100%);
+}
+.installeer-kaart img { width: 56px; height: 56px; border-radius: 14px; }
+.installeer-kaart .tekst { flex: 1 1 220px; }
+.installeer-kaart strong { display: block; font-size: 1.05rem; }
+.installeer-kaart span { opacity: 0.85; font-size: 0.88rem; }
+.installeer-knop {
+    background: #ffffff;
+    color: #112233;
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 24px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Training-knop: wit met BVA-verlooprand, zodat hij anders is dan de game- en plays-knop */
+.btn-training {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #112233;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 11px 24px;
+    border-radius: 50px;
+    border: 2px solid transparent;
+    background: linear-gradient(#ffffff, #ffffff) padding-box,
+                linear-gradient(120deg, #58A6C2, #112233) border-box;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-training:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 34, 51, 0.2);
+    color: #112233;
+}
+.training-balk {
+    height: 10px;
+    background-color: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 12px;
+}
+.training-balk > div {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(120deg, #58A6C2, #112233);
+}
+
+@media (max-width: 768px) {
+    .seamless-banner {
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+    }
+}
+
+/* Logo in het menu */
+.nav-logo-img { height: 60px; width: auto; display: block; }
+.nav-logo-tekst { white-space: nowrap; }
+
+/* Telefoon: alles binnen het scherm, geen horizontaal scrollen */
+@media (max-width: 700px) {
+    html, body { overflow-x: hidden; }
+    .navbar { padding: 12px 16px; gap: 10px; }
+    .nav-logo-img { height: 46px; }
+    .nav-links { gap: 16px; font-size: 13px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn-team { padding: 6px 14px; }
+    .hero {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 24px;
+        min-height: 0;
+        padding: 120px 20px 32px;
+    }
+    .hero h1 { font-size: 40px; }
+    .next-game-card { width: auto; padding: 20px; }
+    .turquoise-bar { gap: 24px; height: auto; padding: 16px 12px; }
+    .games-section { margin: 40px auto; }
+    .section-title { font-size: 28px; margin-bottom: 18px; }
+    /* Wedstrijdrij als raster: datum links, naam + thuis/uit in het midden, tijd rechts */
+    .game-row {
+        display: grid;
+        grid-template-columns: 46px minmax(0, 1fr) auto;
+        column-gap: 12px;
+        row-gap: 6px;
+        align-items: center;
+        padding: 16px 0;
+    }
+    .game-date-col { grid-column: 1; grid-row: 1 / span 2; width: auto; flex-direction: column; align-items: center; gap: 0; }
+    .game-info-col { grid-column: 2; grid-row: 1; padding-left: 0; }
+    .game-row > div:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .game-time-col { grid-column: 3; grid-row: 1 / span 2; min-width: 0; font-size: 18px; }
+    .game-teams-text { font-size: 15px; }
+    .badge-thuis-uit { margin-right: 0; }
+    .home-block { margin-top: 56px; }
+    .home-block + .home-block { margin-top: 56px; padding-top: 40px; }
+    .seamless-info, .seamless-banner { padding: 22px; flex-basis: 100%; }
+}
+@media (max-width: 480px) {
+    .nav-logo-tekst { display: none; }   /* alleen het logo, zodat het menu op één regel past */
+    .nav-links { gap: 14px; }
+    .hero h1 { font-size: 34px; }
+}
+    </style>
+</head>
+<body>
+
+    <!-- Doorzichtige Navbar -->
+    <div class="navbar">
+        <a class="nav-logo" href="/" style="color: inherit; text-decoration: none;">
+            <img src="{% static 'img/bva-logo-wit.png' %}" alt="BVA logo" width="50" height="60" class="nav-logo-img">
+            <span class="nav-logo-tekst">BVA VSE-2</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ archief_url }}">Wedstrijden</a>
+            <a href="{{ plays_url }}">Plays</a>
+            <a href="{{ training_url }}">Training</a>
+            {% if stats_url %}<a href="{{ stats_url }}">Stats</a>{% endif %}
+            <a href="{{ team_url }}" class="btn-team">Ons team</a>
+        </div>
+    </div>
+
+    <!-- Hero Banner met dynamische achtergrondfoto -->
+    {% if page.achtergrond_foto %}
+        {% image page.achtergrond_foto width-1920 as img %}
+        <div class="hero" style="background-image: linear-gradient(rgba(17, 34, 51, 0.65), rgba(17, 34, 51, 0.75)), url('{{ img.url }}');">
+    {% else %}
+        <div class="hero" style="background-color: #112233;">
+    {% endif %}
+        
+        <div class="hero-content">
+            <div class="small-tag">BASKETBALVERENIGING AMSTERDAM</div>
+            <h1>{{ page.koptekst }}</h1>
+            <div class="sub">{{ page.subtekst|richtext }}</div>
+        </div>
+
+      <!-- Volgende wedstrijd blokje -->
+        <div class="next-game-card">
+            <div class="game-header">Volgende wedstrijd</div>
+            {% if aankomende_games %}
+                {% with next_game=aankomende_games.0 %}
+                    <div style="font-size: 12px; font-weight: bold; color: #58A6C2; margin-bottom: 6px; text-transform: uppercase;">
+                        {{ next_game.datum|date:"l j F" }} <!-- Toont bijv: Zaterdag 24 Oktober -->
+                    </div>
+                    <div class="game-teams" style="font-size: 16px; margin-bottom: 6px;">
+                        <span>{{ next_game.titel }}</span>
+                    </div>
+                    <div class="game-sub" style="margin-bottom: 15px;">{{ next_game.locatie }}</div>
+                    <div class="game-footer">
+                        <span class="badge-thuis-uit {% if next_game.thuis_uit == 'THUIS' %}badge-thuis{% else %}badge-uit{% endif %}" style="padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                            {{ next_game.thuis_uit }}
+                        </span>
+                        <span class="time-badge">{{ next_game.datum|date:"H:i" }}</span>
+                    </div>
+                {% endwith %}
+            {% else %}
+                <div class="game-teams">
+                    <span>BVA VSE-2</span>
+                </div>
+                <div class="game-sub">Geen games gevonden</div>
+                <div class="game-footer">
+                    <span>Sporthal</span>
+                    <span class="time-badge">--:--</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Turquoise Balk in tenue-kleur -->
+    <div class="turquoise-bar">
+        <div class="stat-item">
+            <div class="num">{{ aantal_spelers }}</div>
+            <div class="label">Spelers</div>
+        </div>
+        <div class="stat-item">
+            <div class="num">{{ page.seizoen }}</div>
+            <div class="label">Seizoen</div>
+        </div>
+        <div class="stat-item">
+            <div class="num">#SAMEN</div>
+            <div class="label">Onze Mindset</div>
+        </div>
+    </div>
+
+    <!-- Mededelingenbord -->
+    {% if mededelingen or kan_mededeling_plaatsen %}
+    <div class="mededelingen">
+        <div class="mededelingen-kop">
+            <div>
+                <div class="section-subtitle">Van de coach &amp; trainers</div>
+                <h3>📢 Mededelingen</h3>
+            </div>
+            {% if kan_mededeling_plaatsen %}
+                <div class="mededelingen-acties">
+                    <button type="button" class="mededeling-plaatsen" onclick="openMededeling(null)">+ Mededeling plaatsen</button>
+                    <button type="button" class="link-knop" onclick="homeUitloggen()">Uitloggen ({{ request.user.get_username }})</button>
+                </div>
+            {% endif %}
+        </div>
+        {% for m in mededelingen %}
+            <div class="mededeling {% if m.belangrijk %}belangrijk{% endif %} {% if m.zichtbaar_vanaf > vandaag or m.zichtbaar_tot and m.zichtbaar_tot < vandaag %}niet-zichtbaar{% endif %}">
+                <div class="mededeling-rij">
+                    <div>
+                        {% if kan_mededeling_plaatsen %}
+                            {% if m.zichtbaar_vanaf > vandaag %}<div class="mededeling-status">Zichtbaar vanaf {{ m.zichtbaar_vanaf|date:"j F" }}</div>
+                            {% elif m.zichtbaar_tot and m.zichtbaar_tot < vandaag %}<div class="mededeling-status">Verlopen (alleen jij ziet dit)</div>{% endif %}
+                        {% endif %}
+                        <div class="mededeling-titel">{% if m.belangrijk %}📌 {% endif %}{{ m.titel }}</div>
+                    </div>
+                    {% if kan_mededeling_plaatsen %}
+                        <div class="beheer-knopjes">
+                            <button type="button" onclick="openMededeling('{{ m.id }}')">✏️ Bewerken</button>
+                            <button type="button" class="rood" data-titel="{{ m.titel }}" onclick="mededelingVerwijderen({{ m.id }}, this.dataset.titel)">🗑</button>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if m.tekst %}<div class="mededeling-tekst">{{ m.tekst|linebreaksbr }}</div>{% endif %}
+                <div class="mededeling-meta">{{ m.aangemaakt|date:"j F" }}{% if m.auteur %} · {{ m.auteur }}{% endif %}{% if m.zichtbaar_tot %} · zichtbaar t/m {{ m.zichtbaar_tot|date:"j F" }}{% endif %}</div>
+            </div>
+        {% empty %}
+            <div class="mededeling" style="color:#6b7280;">Er staan nu geen mededelingen. Klik op "+ Mededeling plaatsen" om er een te maken.</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Aankomende Games Sectie -->
+    <div class="games-section">
+        <div class="section-subtitle">Op de planning</div>
+        <div class="section-title">Aankomende Games</div>
+
+        {% if aankomende_games %}
+            {% for game in aankomende_games %}
+                <div class="game-row">
+                    <div class="game-date-col">
+                        <span class="game-day">{{ game.datum|date:"j" }}</span>
+                        <span class="game-month">{{ game.datum|date:"M" }}</span>
+                    </div>
+                    <div class="game-info-col">
+                        <div class="game-teams-text">{{ game.titel }}</div>
+                        <div class="game-location-text">{{ game.locatie }}</div>
+                    </div>
+                    <div>
+                        <span class="badge-thuis-uit {% if game.thuis_uit == 'THUIS' %}badge-thuis{% else %}badge-uit{% endif %}">
+                            {{ game.thuis_uit }}
+                        </span>
+                    </div>
+                    <div class="game-time-col">
+                        {{ game.datum|date:"H:i" }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #666; font-style: italic;">Nog geen wedstrijden geladen. Voeg de iCal-link toe in de Wagtail administratieomgeving om het schema te koppelen.</p>
+        {% endif %}
+
+        <a href="{{ programma_url }}" class="all-games-link">Bekijk het hele programma →</a>
+   
+           <!-- SECTIE: Laatste Wedstrijd & Video-Analyse (In dezelfde stijl als Aankomende Games) -->
+<div class="container home-block" style="max-width: 1100px;">
+    <div class="row">
+        <div class="col-12">
+            <!-- Kop in dezelfde stijl als "Aankomende Games" -->
+            <div class="home-block-head">
+                <span class="text-uppercase text-muted small fw-bold tracking-wider" style="color: #6b7280; font-size: 0.75rem; letter-spacing: 0.05em;">Terugblik</span>
+                <h3 class="fw-bold text-dark mt-1" style="color: #111827; font-size: 1.75rem;">Laatste Wedstrijd & Analyse</h3>
+            </div>
+
+            <!-- Het wedstrijdpagina-achtige blok dat overloopt in de pagina -->
+            <div class="latest-match-seamless">
+                
+                <!-- LINKERKANT: Wedstrijd Info -->
+                <div class="seamless-info">
+                    {% if laatste_wedstrijd %}
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge text-white px-2 py-1" style="background: linear-gradient(120deg, #58A6C2, #112233); font-size: 0.7rem;">GESPEELD</span>
+                            <span class="text-muted small ms-2">📅 {{ laatste_wedstrijd.datum_str }}</span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">{{ laatste_wedstrijd.titel }}</h4>
+
+                        <div class="mt-3 pt-3 border-top">
+                            <span class="text-uppercase small text-muted fw-bold d-block mb-1" style="font-size: 0.7rem;">Einduitslag</span>
+                            <div class="h3 fw-bold mb-0" style="color: #58A6C2; font-size: 1.75rem; margin-top: 4px;">{{ laatste_wedstrijd.uitslag }}</div>
+                        </div>
+                        <div class="text-muted small" style="margin-top: 12px;">
+                            💬 {{ laatste_wedstrijd_reacties }} reactie{{ laatste_wedstrijd_reacties|pluralize:"s" }} van coach &amp; teammates
+                        </div>
+                    </div>
+                    {% else %}
+                    <div>
+                        <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">Nog geen wedstrijden</h4>
+                        <p class="text-muted small mb-0">Zodra de coach op de wedstrijdenpagina een film toevoegt, verschijnt hij hier automatisch.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="home-block-cta">
+                     <a href="{{ laatste_wedstrijd_url }}" class="btn-game">
+                       ▶ Bekijk Video & Coach Notities
+                     </a>
+                     </div>
+                </div>
+
+                <!-- RECHTERKOLOM: Video Callout in donkerblauwe SLAM-stijl (past bij de header) -->
+                <div class="seamless-banner">
+                    <div class="text-center p-3">
+                        <div class="mb-2" style="font-size: 2rem;">🏀</div>
+                        <h5 class="fw-bold text-white mb-2" style="font-size: 1.1rem;">Tactische Analyse & Teammate Reacties</h5>
+                        <p class="text-light opacity-75 small mb-0" style="font-size: 0.825rem; max-width: 280px; margin: 0 auto;">
+                            Klik direct op timestamps van de coach en praat mee over de bespreking.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+           <!-- SECTIE: Playbook (zelfde stijl als Laatste Wedstrijd) -->
+<div class="container home-block" style="max-width: 1100px;">
+    <div class="row">
+        <div class="col-12">
+            <div class="home-block-head">
+                <span class="text-uppercase text-muted small fw-bold tracking-wider" style="color: #6b7280; font-size: 0.75rem; letter-spacing: 0.05em;">Playbook</span>
+                <h3 class="fw-bold text-dark mt-1" style="color: #111827; font-size: 1.75rem;">Onze Plays Terugkijken</h3>
+            </div>
+
+            <div class="latest-match-seamless">
+
+                <!-- LINKERKANT: Playbook Info -->
+                <div class="seamless-info">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge" style="background: linear-gradient(120deg, #58A6C2, #112233); color: #ffffff; padding: 4px 8px; font-size: 0.7rem;">GEFILMD</span>
+                            <span class="text-muted small ms-2">🎥 {{ aantal_plays }} play{{ aantal_plays|pluralize:"s" }}</span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">Plays met &amp; zonder defense</h4>
+                        <p class="text-muted small mb-0">Bekijk onze plays stap voor stap en wissel tussen de video met en zonder verdediging.</p>
+                    </div>
+
+                    <div class="home-block-cta">
+                     <a href="{{ plays_url }}" class="btn-plays">
+                       📋 Open het Playbook
+                     </a>
+                    </div>
+                </div>
+
+                <!-- RECHTERKOLOM: Callout -->
+                <div class="seamless-banner">
+                    <div class="text-center p-3">
+                        <div class="mb-2" style="font-size: 2rem;">📋</div>
+                        <h5 class="fw-bold text-white mb-2" style="font-size: 1.1rem;">Playbook & Uitleg</h5>
+                        <p class="text-light opacity-75 small mb-0" style="font-size: 0.825rem; max-width: 280px; margin: 0 auto;">
+                            Opstelling, focus en stappen per play, plus reacties van coach en teammates.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+           <!-- SECTIE: Training deze week (zelfde stijl als Laatste Wedstrijd en Plays) -->
+<div class="container home-block" style="max-width: 1100px;">
+    <div class="row">
+        <div class="col-12">
+            <div class="home-block-head">
+                <span class="text-uppercase text-muted small fw-bold tracking-wider" style="color: #6b7280; font-size: 0.75rem; letter-spacing: 0.05em;">Training</span>
+                <h3 class="fw-bold text-dark mt-1" style="color: #111827; font-size: 1.75rem;">Opdrachten van deze week</h3>
+            </div>
+
+            <div class="latest-match-seamless">
+
+                <!-- LINKERKANT: Training info -->
+                <div class="seamless-info">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge" style="background: linear-gradient(120deg, #58A6C2, #112233); color: #ffffff; padding: 4px 8px; font-size: 0.7rem;">DEZE WEEK</span>
+                            <span class="text-muted small ms-2">📋 {{ training_aantal }} opdracht{{ training_aantal|pluralize:"en" }}</span>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">Team {{ training_team_pct }}% klaar</h4>
+                        <div class="training-balk"><div style="width: {{ training_team_pct }}%;"></div></div>
+                        <p class="text-muted small mb-0" style="margin-top: 14px;">Doe je opdrachten, vink ze af en houd je 🔥 reeks vast.</p>
+                    </div>
+
+                    <div class="home-block-cta">
+                     <a href="{{ training_url }}" class="btn-training">
+                       ✓ Naar mijn opdrachten
+                     </a>
+                    </div>
+                </div>
+
+                <!-- RECHTERKOLOM: Callout -->
+                <div class="seamless-banner">
+                    <div class="text-center p-3">
+                        <div class="mb-2" style="font-size: 2rem;">💪</div>
+                        <h5 class="fw-bold text-white mb-2" style="font-size: 1.1rem;">Samen Sterker</h5>
+                        <p class="text-light opacity-75 small mb-0" style="font-size: 0.825rem; max-width: 280px; margin: 0 auto;">
+                            Kracht, conditie, shooting en blessurepreventie. Zie wie er al klaar is.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+           <!-- SECTIE: Statistieken (zelfde stijl als Training) -->
+{% if stats_url %}
+<div class="container home-block" style="max-width: 1100px;">
+    <div class="row">
+        <div class="col-12">
+            <div class="home-block-head">
+                <span class="text-uppercase text-muted small fw-bold tracking-wider" style="color: #6b7280; font-size: 0.75rem; letter-spacing: 0.05em;">Statistieken</span>
+                <h3 class="fw-bold text-dark mt-1" style="color: #111827; font-size: 1.75rem;">Stats per wedstrijd</h3>
+            </div>
+
+            <div class="latest-match-seamless">
+
+                <!-- LINKERKANT: laatste wedstrijd met stats -->
+                <div class="seamless-info">
+                    <div>
+                        {% if stats_laatste %}
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge" style="background: linear-gradient(120deg, #58A6C2, #112233); color: #ffffff; padding: 4px 8px; font-size: 0.7rem;">LAATSTE STATS</span>
+                                <span class="text-muted small ms-2">📅 {{ stats_laatste.datum|date:"j F Y" }}</span>
+                            </div>
+                            <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">
+                                VSE-2 {{ stats_score.0 }} – {{ stats_score.1 }} {{ stats_laatste.tegenstander }}
+                            </h4>
+                            {% if stats_topscorer %}
+                                <p class="text-muted small mb-0">🏀 Topscorer: <strong class="text-dark">{{ stats_topscorer.0.naam }}</strong> met {{ stats_topscorer.1 }} punten</p>
+                            {% endif %}
+                            <p class="text-muted small mb-0" style="margin-top: 8px;">{{ stats_aantal_wedstrijden }} wedstrijd{{ stats_aantal_wedstrijden|pluralize:"en" }} bijgehouden · filter per speelster en per kwart.</p>
+                        {% else %}
+                            <h4 class="fw-bold text-dark mb-2" style="font-size: 1.35rem; color: #111827;">Nog geen stats</h4>
+                            <p class="text-muted small mb-0">Punten, rebounds, assists en meer, per speelster en per kwart.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="home-block-cta">
+                        <a href="{{ stats_url }}" class="btn-training" style="white-space: nowrap;">📊 Bekijk alle stats</a>
+                    </div>
+                </div>
+
+                <!-- RECHTERKOLOM: Callout -->
+                <div class="seamless-banner">
+                    <div class="text-center p-3">
+                        <div class="mb-2" style="font-size: 2rem;">📊</div>
+                        <h5 class="fw-bold text-white mb-2" style="font-size: 1.1rem;">Box score</h5>
+                        <p class="text-light opacity-75 small mb-0" style="font-size: 0.825rem; max-width: 280px; margin: 0 auto;">
+                            Live langs het veld of achteraf met de wedstrijdfilm erbij.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+    </div>
+        
+
+    
+
+    
+
+    <!-- Meldingen aanzetten (wordt door pwa.js ingevuld) -->
+    <div class="meldingen-plek" data-meldingen hidden></div>
+
+    <!-- Inloggen / beheren voor coaches en trainers -->
+    {% if kan_mededeling_plaatsen %}
+        {{ mededelingen_data|json_script:"mededelingen-data" }}
+        <dialog id="mededelingDialoog" class="bva-dialoog" aria-labelledby="mededelingTitel">
+            <form method="dialog" onsubmit="event.preventDefault(); mededelingOpslaan(this);">
+                <div class="dialoog-kop"><span class="dialoog-titel" id="mededelingTitel">Nieuwe mededeling</span>
+                    <button type="button" aria-label="Sluiten" onclick="sluitDialoog(this)">×</button></div>
+                <div class="dialoog-body">
+                    <div class="dialoog-fout" hidden></div>
+                    <div><label for="m-titel">Titel *</label>
+                        <input type="text" id="m-titel" name="titel" required maxlength="120" placeholder="Bijv. Zaterdag 30 min eerder in de zaal"></div>
+                    <div><label for="m-tekst">Bericht</label>
+                        <textarea id="m-tekst" name="tekst" rows="4" maxlength="1000" placeholder="Meer uitleg (optioneel)"></textarea></div>
+                    <div><label><input type="checkbox" name="belangrijk"> 📌 Belangrijk (valt extra op en staat bovenaan)</label></div>
+                    <div class="dialoog-rij">
+                        <div><label for="m-vanaf">Zichtbaar vanaf</label><input type="date" id="m-vanaf" name="zichtbaar_vanaf"></div>
+                        <div><label for="m-tot">Zichtbaar t/m</label><input type="date" id="m-tot" name="zichtbaar_tot"></div>
+                    </div>
+                    <div class="dialoog-hint">Leeg "vanaf" = vandaag. Leeg "t/m" = blijft staan tot je hem verwijdert.</div>
+                </div>
+                <div class="dialoog-voet">
+                    <button type="button" class="knop-licht" onclick="sluitDialoog(this)">Annuleren</button>
+                    <button type="submit" class="knop-bva">Plaatsen</button>
+                </div>
+            </form>
+        </dialog>
+    {% else %}
+        <div class="inlog-voet">
+            <button type="button" onclick="openDialoog('inlogDialoog')">🔒 Coach of trainer? Inloggen</button>
+        </div>
+        <dialog id="inlogDialoog" class="bva-dialoog" aria-labelledby="inlogTitel">
+            <form method="dialog" data-page-id="{{ page.id }}" onsubmit="event.preventDefault(); homeInloggen(this);">
+                <div class="dialoog-kop"><span id="inlogTitel">Inloggen coach / trainer</span>
+                    <button type="button" aria-label="Sluiten" onclick="sluitDialoog(this)">×</button></div>
+                <div class="dialoog-body">
+                    <div class="dialoog-fout" hidden></div>
+                    <div><label for="h-naam">Naam</label><input type="text" id="h-naam" name="gebruikersnaam" autocomplete="username" required></div>
+                    <div><label for="h-ww">Wachtwoord</label><input type="password" id="h-ww" name="wachtwoord" autocomplete="current-password" required></div>
+                </div>
+                <div class="dialoog-voet">
+                    <button type="button" class="knop-licht" onclick="sluitDialoog(this)">Annuleren</button>
+                    <button type="submit" class="knop-bva">Inloggen</button>
+                </div>
+            </form>
+        </dialog>
+    {% endif %}
+    <script src="{% static 'js/mededelingen.js' %}"></script>
+
+    <!-- Als app op je telefoon (verschijnt alleen als installeren kan) -->
+    <div class="installeer-blok" data-installeer hidden>
+        <div class="installeer-kaart">
+            <img src="{% static 'img/app/icon-192.png' %}" alt="">
+            <div class="tekst">
+                <strong>📱 Zet BVA VSE-2 op je telefoon</strong>
+                <span data-installeer-stap="knop" hidden>Met één tik als app op je beginscherm.</span>
+                <span data-installeer-stap="ios" hidden>In 3 tikken als app op je iPhone, met het BVA-logo tussen je apps.</span>
+            </div>
+            <button type="button" class="installeer-knop" data-installeer-knop data-installeer-stap="knop" hidden>Installeren</button>
+            <button type="button" class="installeer-knop" data-ios-uitleg data-installeer-stap="ios" hidden>📲 Laat zien hoe</button>
+        </div>
+    </div>
+
+</body>
+</html>
