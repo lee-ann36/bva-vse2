@@ -4,6 +4,7 @@
 # LET OP (gratis plan): de schijf wordt bij elke update of herstart gewist. De site start dan
 # weer leeg op (pagina's en de accounts hieronder worden automatisch opnieuw aangemaakt),
 # maar alles wat je zelf invoert (speelsters, stats, films, foto's) is dan weg.
+# Oplossing: vul DATABASE_URL hieronder in met een online database (zie onderaan).
 services:
   - type: web
     name: bva-vse2
@@ -25,4 +26,8 @@ services:
       - key: STATS_GEBRUIKER
         sync: false
       - key: STATS_WACHTWOORD
+        sync: false
+      # Online PostgreSQL-database (bijv. gratis bij Neon). Hiermee blijven speelsters, stats,
+      # films en foto's bewaard bij elke update. Zonder deze instelling gaat alles verloren!
+      - key: DATABASE_URL
         sync: false
