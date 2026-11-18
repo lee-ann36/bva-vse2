@@ -193,15 +193,7 @@
                             </button>
                         </div>
 
-                        <div class="reacties-container d-flex flex-column gap-3" id="play-{{ forloop.counter0 }}-reacties">
-                            {% for reactie in reacties %}
-                                {% include "home/includes/reactie.html" %}
-                            {% empty %}
-                                <div class="text-muted small no-comments">Nog geen reacties op deze play.</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mt-3 pt-3 border-top add-comment-form d-none">
+                        <div class="mb-3 pb-3 border-bottom add-comment-form d-none">
                             <h6>Nieuwe reactie plaatsen</h6>
                             <div class="row g-2">
                                 <div class="col-md-4">
@@ -222,6 +214,15 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="reacties-container d-flex flex-column gap-3" id="play-{{ forloop.counter0 }}-reacties">
+                            {% for reactie in reacties %}
+                                {% include "home/includes/reactie.html" %}
+                            {% empty %}
+                                <div class="text-muted small no-comments">Nog geen reacties op deze play.</div>
+                            {% endfor %}
+                        </div>
+
                     </div>
 
                 </div>

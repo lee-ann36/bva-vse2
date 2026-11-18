@@ -126,7 +126,9 @@
     // ---------- Formulier ----------
     window.openAddCommentModal = function (containerId) {
         const footer = document.getElementById(containerId).closest('.card-footer');
-        footer.querySelector('.add-comment-form').classList.toggle('d-none');
+        const form = footer.querySelector('.add-comment-form');
+        form.classList.toggle('d-none');
+        if (!form.classList.contains('d-none')) form.querySelector('.author-input').focus();
     };
 
     window.cancelComment = function (btn) {
