@@ -1027,7 +1027,7 @@ class StatActie(models.Model):
         ('fr', 'Vrije worp raak'), ('fm', 'Vrije worp mis'),
         ('or', 'Aanvallende rebound'), ('dr', 'Verdedigende rebound'),
         ('as', 'Assist'), ('st', 'Steal'), ('bl', 'Block'),
-        ('to', 'Balverlies'), ('pf', 'Fout'),
+        ('to', 'Balverlies'), ('zp', 'Zwakke pass'), ('pf', 'Fout'),
         ('t1', 'Tegenstander +1'), ('t2', 'Tegenstander +2'), ('t3', 'Tegenstander +3'),
     ]
     TEGENSTANDER = {'t1', 't2', 't3'}

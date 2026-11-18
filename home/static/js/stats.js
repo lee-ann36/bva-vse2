@@ -175,7 +175,7 @@
     const KORT = {
         '2r': '2 punten ✓', '2m': '2 punten ✗', '3r': '3 punten ✓', '3m': '3 punten ✗',
         fr: 'Vrije worp ✓', fm: 'Vrije worp ✗', or: 'Rebound aanval', dr: 'Rebound verdediging',
-        as: 'Assist', st: 'Steal', bl: 'Block', to: 'Balverlies', pf: 'Fout',
+        as: 'Assist', st: 'Steal', bl: 'Block', to: 'Balverlies', zp: 'Zwakke pass', pf: 'Fout',
         t1: '+1', t2: '+2', t3: '+3',
     };
     const KWART_NAAM = { 1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4', 5: 'V' };
@@ -291,7 +291,7 @@
             fg: (g('2r') + g('3r')) + '/' + (g('2r') + g('3r') + g('2m') + g('3m')),
             drie: g('3r') + '/' + (g('3r') + g('3m')),
             vw: g('fr') + '/' + (g('fr') + g('fm')),
-            reb: g('or') + g('dr'), as: g('as'), st: g('st'), bl: g('bl'), to: g('to'), pf: g('pf'),
+            reb: g('or') + g('dr'), as: g('as'), st: g('st'), bl: g('bl'), to: g('to'), zp: g('zp'), pf: g('pf'),
         };
     }
 
@@ -331,8 +331,8 @@
             const t = tel(perSpeler[s.id]);
             return '<tr><td class="naam">' + esc(s.naam) + '</td><td class="fw-bold">' + t.pts + '</td><td>' + t.fg + '</td><td>' + t.drie +
                 '</td><td>' + t.vw + '</td><td>' + t.reb + '</td><td>' + t.as + '</td><td>' + t.st + '</td><td>' + t.bl +
-                '</td><td>' + t.to + '</td><td' + (t.pf >= 4 ? ' class="text-danger fw-bold"' : '') + '>' + t.pf + '</td></tr>';
-        }).join('') || '<tr><td colspan="11" class="text-muted text-start">Nog geen acties.</td></tr>';
+                '</td><td>' + t.to + '</td><td>' + t.zp + '</td><td' + (t.pf >= 4 ? ' class="text-danger fw-bold"' : '') + '>' + t.pf + '</td></tr>';
+        }).join('') || '<tr><td colspan="12" class="text-muted text-start">Nog geen acties.</td></tr>';
 
         // Status
         const sync = live.querySelector('[data-sync]');

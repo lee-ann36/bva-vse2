@@ -112,7 +112,7 @@ class ReactieRechtenTests(TestCase):
     def test_ongeldige_invoer_geweigerd(self):
         basis = {'page_id': self.archief.id, 'block_id': self._block_id(), 'auteur': 'X', 'rol': 'teammate', 'tekst': 'hoi'}
         for fout in ({'block_id': 'bestaat-niet'}, {'block_id': self._block_id(self.plays)},
-                     {'rol': 'admin'}, {'tekst': ''}, {'tekst': 'x' * 2001}, {'page_id': 999999}):
+                     {'rol': 'admin'}, {'tekst': ''}, {'tekst': 'x' * 20001}, {'page_id': 999999}):
             r = self._post('/api/sla-reactie/', {**basis, **fout})
             self.assertIn(r.status_code, (400, 404), fout)
         self.assertEqual(WedstrijdReactie.objects.count(), 0)

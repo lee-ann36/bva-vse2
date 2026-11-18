@@ -43,6 +43,7 @@ KOLOMMEN = [
     ('STL', 'Steals', 'st', 'n'),
     ('BLK', 'Blocks', 'bl', 'n'),
     ('TO', 'Balverlies (turnovers)', 'to', 'n'),
+    ('ZP', 'Zwakke passes', 'zp', 'n'),
     ('PF', 'Fouten', 'pf', 'n'),
 ]
 

@@ -119,6 +119,8 @@
         url.searchParams.set('start', String(totalSeconds));
         url.searchParams.set('autoplay', '1');
         iframe.src = url.toString();
+        // Terug naar de video, zodat je meteen ziet wat er op dat moment gebeurt
+        iframe.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     // ---------- Formulier ----------

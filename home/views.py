@@ -29,7 +29,7 @@ from .models import (
 )
 
 MAX_NAAM = 100
-MAX_TEKST = 2000
+MAX_TEKST = 20000  # ruim genoeg voor een lange reactie (± 3000 woorden)
 ROLLEN = {'coach', 'teammate'}
 
 
